@@ -1,0 +1,32 @@
+html, body {
+  height: 100%;
+}
+
+body {
+    overflow: hidden;
+}
+
+#container {
+    position:relative;
+    display: grid;
+    height:800px;
+    grid-template-rows: 1fr auto;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        'main-screen'
+        'lower-toolbar';
+    gap: 3px;
+    background-color: dodgerblue;
+    padding: 5px;
+}
+
+#main-screen {
+    display:grid;
+    grid-area: main-screen;
+}
+
+#lower-toolbar {
+    display:grid;
+    grid-area: lower-toolbar;
+
+}
