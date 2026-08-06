@@ -9,11 +9,11 @@ export class HUD {
     }
 
     square(){
-        const geometry = new THREE.PlaneGeometry();
+        const geometry = new THREE.PlaneGeometry(.5,.5,1,1);
         const material = new THREE.MeshBasicMaterial({ color: 'white' });
         const square = new THREE.Mesh(geometry, material);
         square.position.x = 0;
-        square.position.y = 1.5;
+        square.position.y = 2;
         square.position.z = -5; // Dont block or be behind camera!
         square.renderOrder = 9999;
         this.camera.add(square)

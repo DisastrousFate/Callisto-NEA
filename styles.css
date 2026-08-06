@@ -6,6 +6,10 @@ body {
     overflow: hidden;
 }
 
+canvas:focus {
+    outline:none;
+}
+
 h1 {
     font-family: 'Arial', sans-serif;
     font-size: 24px;

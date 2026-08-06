@@ -3,18 +3,29 @@ import { CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.
 import { FontLoader, TextGeometry } from 'three/examples/jsm/Addons.js';
 
 import * as graphics from './graphics.js';
-import * as hud from './hud.js'
+import * as hud from './hud.js';
+import * as camera from './camera.js';
+import * as input from './input.js';
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const mainRenderer = new THREE.WebGLRenderer({antialias: true});
+const orbitControls = new camera.Camera(scene, pCam, mainRenderer);
+
+const gameObjects = []
+export {gameObjects}
 
 const div_2D = document.getElementById('HTML');
 const div_mainScreen = document.getElementsByClassName('main-screen')[0];
 
 // 3D Graphics Renderer
 
-const mainRenderer = new THREE.WebGLRenderer({antialias: true});
-const canvas = mainRenderer.domElement
+const canvas = mainRenderer.domElement;
+canvas.setAttribute('tabindex', 0);
+
+// Input
+const gameInput = new input.Input(canvas);
+
 
 mainRenderer.setSize(window.innerWidth, window.innerHeight);
 mainRenderer.setAnimationLoop(render);
@@ -23,7 +34,6 @@ mainRenderer.setPixelRatio(window.devicePixelRatio);
 div_mainScreen.appendChild(mainRenderer.domElement);
 
 // HTML Renderer Lower Toolbar
-
 const HTMLRenderer = new CSS2DRenderer();
 HTMLRenderer.setSize(window.innerWidth, window.innerHeight);
 HTMLRenderer.domElement.style.position = 'absolute';
@@ -39,16 +49,26 @@ div_2D.appendChild(lower_toolbar);
 lower_toolbar.setAttribute('id', 'lower-toolbar');
 
 const lowerToolbarText = document.createElement('h1');
-lowerToolbarText.innerHTML = 'Lower Toolbar'
+lowerToolbarText.innerHTML = 'Lower Toolbar';
 lower_toolbar.appendChild(lowerToolbarText);
 
 
 // Cube rendered to camera to render as 2D
 
-const HUD = new hud.HUD(scene, camera)
+const HUD = new hud.HUD(scene, pCam);
 HUD.square();
-scene.add(camera)
+scene.add(pCam);
 
+
+// Movement
+const moveObject = new THREE.Mesh(
+  new THREE.BoxGeometry(1,1,1),
+  new THREE.MeshBasicMaterial({color: 	0x880808})
+);
+moveObject.position.y = moveObject.scale.y/2
+moveObject.name = "moveObject"
+scene.add(moveObject);
+gameObjects.push(moveObject);
 
 // Cube
 const geometry = new THREE.BoxGeometry( .5, .5, .5 );
@@ -58,20 +78,20 @@ const cube = new THREE.Mesh( geometry, material );
 const label1 = new graphics.TextLabel('Cube', lower_toolbar);
 cube.add(label1.textObject);
 scene.add( cube );
+gameObjects.push(cube);
 
-const geometry2 = new THREE.CircleGeometry(2, 32, 0, Math.PI * 2);
-const material2 = new THREE.MeshBasicMaterial({color: 0xffff00}, {side: THREE.DoubleSide});
-const circle = new THREE.Mesh(geometry2, material2);
+// Plane
+const groundPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(10,10,1,1),
+  new THREE.MeshBasicMaterial({color: 'gray', side: THREE.DoubleSide})
+)
+groundPlane.rotateX(Math.PI/2)
+console.log(groundPlane.position);
+scene.add(groundPlane);
+gameObjects.push(groundPlane);
 
-const label2 = new graphics.TextLabel('Circle', lower_toolbar, 'black');
-circle.add(label2.textObject);
-//scene.add(circle);
+console.log(gameObjects)
 
-// Line
-const line1 = new graphics.Line();
-scene.add(line1.line);
-
-camera.position.z = 5;
 
 function resizeRendererToDisplaySize(renderer) {
   const width = canvas.clientWidth;
@@ -79,23 +99,24 @@ function resizeRendererToDisplaySize(renderer) {
 
   if ((window.innerWidth != canvas.width) || (window.innerHeight != height)) {
     renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = canvas.clientWidth / canvas.clientHeight;
-    camera.updateProjectionMatrix();
+    pCam.aspect = canvas.clientWidth / canvas.clientHeight;
+    pCam.updateProjectionMatrix();
 	}
 
 }
 
 function render( time ) {
-  
-  resizeRendererToDisplaySize(mainRenderer)
-  resizeRendererToDisplaySize(HTMLRenderer)
+  resizeRendererToDisplaySize(mainRenderer);
+  resizeRendererToDisplaySize(HTMLRenderer);
 
-  
   cube.rotation.x = time / 2000;
   cube.rotation.y = time / 1000;
   cube.translateZ(0.01);
   cube.castShadow = true;
 
-  mainRenderer.render( scene, camera );
-  HTMLRenderer.render( scene, camera );
+  orbitControls.animate(moveObject);
+
+  mainRenderer.render( scene, pCam );
+  HTMLRenderer.render( scene, pCam );
 }
+
