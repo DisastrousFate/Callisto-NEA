@@ -1,17 +1,36 @@
+import { NoToneMapping } from 'three';
 import {gameObjects} from './main.js'
 
-// function findMesh(x){
-//     for (let i = 0; i < x.length; i++){
-//         if(gameObjects[i])
-// }
 
-(async() => {
-    console.log("waiting for variable");
-    while(!gameObjects) // define the condition as you like
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log("variable is defined");
-})();
-console.log("above code doesn't block main function stack");
+function findMesh(name){
+    (async() => {
+        console.log("waiting for variable");
+        let found = false;
+        let object;
+
+        do {
+            for (let i of gameObjects){
+            
+                if(i.name == name){
+                    found = true;
+                    object = gameObjects[i]
+                }
+            }
+          
+          
+        } while (found == false)
+        
+        console.log(object);
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+
+    })();
+}
+
+function movePlayer(){
+
+}
+
+
 
 export class Input{
     constructor(canvas){
@@ -28,17 +47,17 @@ export class Input{
             
             switch (key.key){
                 case 'w':
-                    console.log('w pressed');
-                    
+                    //movePlayer(key.key);
+                    findMesh('moveObject')
                     break;
                 case 'a':
-                    console.log('a pressed');
+                    
                     break;
                 case 's':
-                    console.log('s pressed');
+                    
                     break;
                 case 'd':
-                    console.log('d pressed');
+                    
                     break;
             }
             

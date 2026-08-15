@@ -86,11 +86,24 @@ const groundPlane = new THREE.Mesh(
   new THREE.MeshBasicMaterial({color: 'gray', side: THREE.DoubleSide})
 )
 groundPlane.rotateX(Math.PI/2)
-console.log(groundPlane.position);
+
 scene.add(groundPlane);
 gameObjects.push(groundPlane);
 
+// ------------------------------------------- //
+
+let foundobject = '';
+
 console.log(gameObjects)
+
+for (let i of gameObjects){
+  console.log(i.name)
+  for (let j of i){
+    foundobject = j
+  }
+}
+
+console.log(foundobject)
 
 
 function resizeRendererToDisplaySize(renderer) {
