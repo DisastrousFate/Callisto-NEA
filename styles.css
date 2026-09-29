@@ -1,0 +1,37 @@
+html, body {
+  height: 100%;
+}
+
+body {
+    overflow: hidden;
+}
+
+canvas:focus {
+    outline:none;
+}
+
+h1 {
+    font-family: 'Arial', sans-serif;
+    font-size: 24px;
+    color: #ffffff;
+    text-align: center;
+    margin-top: 20px;
+}
+
+#lower-toolbar {
+    position:absolute;
+    bottom: 10px;
+    width: 100%;
+    text-align:center;
+    z-index: 100;
+    display:block;
+}
+/* 
+#side-toolbar{
+    position:absolute;
+    bottom: 50%;
+    width: 0%;
+    text-align:center;
+    z-index: 100;
+    display:block;
+} */
