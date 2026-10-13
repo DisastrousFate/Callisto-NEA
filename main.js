@@ -1,31 +1,50 @@
+/*---------------------------//
+      IMPORTED LIBRARIES
+//---------------------------*/
+
 import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 import { FontLoader, TextGeometry } from 'three/examples/jsm/Addons.js';
 
-import * as graphics from './graphics.js';
-import * as hud from './hud.js';
-import * as camera from './camera.js';
-import * as input from './input.js';
 
-const scene = new THREE.Scene();
-const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
-const mainRenderer = new THREE.WebGLRenderer({antialias: true});
-const orbitControls = new camera.Camera(scene, pCam, mainRenderer);
+/*---------------------------//
+  SHARED VARIABLE DEFINITIONS
+//---------------------------*/
 
 const gameObjects = []
 export {gameObjects}
 
-const div_2D = document.getElementById('HTML');
-const div_mainScreen = document.getElementsByClassName('main-screen')[0];
+/*---------------------------//
+           MODULES
+//---------------------------*/
 
-// 3D Graphics Renderer
+import * as graphics from './graphics.js';
+import * as hud from './hud.js';
+import * as character from './character.js';
+import * as input from './input.js';
 
+/*---------------------------//
+        LOCAL VARIABLES
+//---------------------------*/
+
+const scene = new THREE.Scene();
+const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const mainRenderer = new THREE.WebGLRenderer({antialias: true});
+const mainCharacter = new character.Character(scene);
+
+const externalCamera = new character.externalCamera(scene, pCam, mainRenderer, mainCharacter);
+
+//const orbitControls = new character.Camera(scene, pCam, mainRenderer, mainCharacter);
 const canvas = mainRenderer.domElement;
 canvas.setAttribute('tabindex', 0);
+const gameInput = new input.Input(canvas, mainCharacter, externalCamera);
 
-// Input
-const gameInput = new input.Input(canvas);
+/*---------------------------//
+    RENDERER INITIALISATION
+//---------------------------*/
 
+const div_2D = document.getElementById('HTML');
+const div_mainScreen = document.getElementsByClassName('main-screen')[0];
 
 mainRenderer.setSize(window.innerWidth, window.innerHeight);
 mainRenderer.setAnimationLoop(render);
@@ -59,16 +78,9 @@ const HUD = new hud.HUD(scene, pCam);
 HUD.square();
 scene.add(pCam);
 
-
-// Movement
-const moveObject = new THREE.Mesh(
-  new THREE.BoxGeometry(1,1,1),
-  new THREE.MeshBasicMaterial({color: 	0x880808})
-);
-moveObject.position.y = moveObject.scale.y/2
-moveObject.name = "moveObject"
-scene.add(moveObject);
-gameObjects.push(moveObject);
+/*---------------------------//
+        MISC GEOMETRY
+//---------------------------*/
 
 // Cube
 const geometry = new THREE.BoxGeometry( .5, .5, .5 );
@@ -86,25 +98,12 @@ const groundPlane = new THREE.Mesh(
   new THREE.MeshBasicMaterial({color: 'gray', side: THREE.DoubleSide})
 )
 groundPlane.rotateX(Math.PI/2)
-
 scene.add(groundPlane);
 gameObjects.push(groundPlane);
 
-// ------------------------------------------- //
-
-let foundobject = '';
-
-console.log(gameObjects)
-
-for (let i of gameObjects){
-  console.log(i.name)
-  // for (let j of i){
-  //   foundobject = j
-  // }
-}
-
-console.log(foundobject)
-
+/*---------------------------//
+       MAIN RENDER LOOP
+//---------------------------*/
 
 function resizeRendererToDisplaySize(renderer) {
   const width = canvas.clientWidth;
@@ -127,9 +126,9 @@ function render( time ) {
   cube.translateZ(0.01);
   cube.castShadow = true;
 
-  orbitControls.animate(moveObject);
+  //orbitControls.animate(mainCharacter.character);
+  externalCamera.animate();
 
   mainRenderer.render( scene, pCam );
   HTMLRenderer.render( scene, pCam );
 }
-

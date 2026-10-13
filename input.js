@@ -1,38 +1,35 @@
 import { NoToneMapping } from 'three';
-import {gameObjects} from './main.js'
+import * as utility from './utility.js'
+import {externalCamera} from './character.js'
 
+// function movePlayer(key){
+    
+//     let moveObject = utility.findMesh('mainCharacter')
+//     if (moveObject) {
+//         // object exists, begin command execution...
 
-function findMesh(meshName) {
-    const found = gameObjects.find(object => object.name === meshName);
-    return found;
-}
-
-function movePlayer(key){
-    let moveObject = findMesh('moveObject')
-    if (moveObject) {
-        // object exists, begin command execution...
-
-        if(key == 'w'){
-            moveObject.position.z -= 0.1;
-        }
-        if(key == 's'){
-            moveObject.position.z += 0.1;
-        }
-        if(key == 'a'){
-            moveObject.position.x -= 0.1;
-        }
-        if(key == 'd'){
-            moveObject.position.x += 0.1;
-        }
+//         if(key == 'w'){
+//             //moveObject.position.z -= 0.1;
+//             //externalCamera
+//         }
+//         if(key == 's'){
+//             //moveObject.position.z += 0.1;
+//         }
+//         if(key == 'a'){
+//             //moveObject.position.x -= 0.1;
+//         }
+//         if(key == 'd'){
+//             //moveObject.position.x += 0.1;
+//         }
         
 
-    }
-}
+//     }
+// }
 
 
 
 export class Input{
-    constructor(canvas){
+    constructor(canvas, character, controls){
 
         canvas.addEventListener('focus', () => {
             // Complete focus on screen.
@@ -46,23 +43,33 @@ export class Input{
             console.log(key.key)
             switch (key.key){
                 case 'w':
-                    movePlayer(key.key);
-                    
+                    // movePlayer(key.key);
+                    //character.deltaZ = -0.1;
+                    character.character.position.z -= 0.1;
                     break;
                 case 'a':
-                    movePlayer(key.key);
-
+                    // movePlayer(key.key);
+                    //character.deltaX = -0.1;
+                    character.character.position.x -= 0.1;
                     break;
                 case 's':
-                    movePlayer(key.key);
-
+                    // movePlayer(key.key);
+                    //character.deltaZ = 0.1;
+                    character.character.position.z += 0.1;
                     break;
                 case 'd':
-                    movePlayer(key.key);
-
+                    // movePlayer(key.key);
+                    //character.deltaX = 0.1;
+                    character.character.position.x += 0.1;
+                    break;
+                case 'ArrowLeft':
+                    break;
+                case 'ArrowRight':
                     break;
             }
-            
+            console.log('character:')
+            console.log(character.character.position)
+
             
         });
 
