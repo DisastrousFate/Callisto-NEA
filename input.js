@@ -29,7 +29,7 @@ import {externalCamera} from './character.js'
 
 
 export class Input{
-    constructor(canvas, character, controls){
+    constructor(canvas, character, camera){
 
         canvas.addEventListener('focus', () => {
             // Complete focus on screen.
@@ -69,6 +69,7 @@ export class Input{
             }
             console.log('character:')
             console.log(character.character.position)
+            camera.controls.target.copy(character.character.position)
 
             
         });
