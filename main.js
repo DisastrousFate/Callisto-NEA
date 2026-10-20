@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
-import { FontLoader, TextGeometry } from 'three/examples/jsm/Addons.js';
+import { FontLoader, TextGeometry, ThreeMFLoader } from 'three/examples/jsm/Addons.js';
 
 
 /*---------------------------//
@@ -22,10 +22,23 @@ import * as graphics from './graphics.js';
 import * as hud from './hud.js';
 import * as character from './character.js';
 import * as input from './input.js';
+import { cameraFar, texture } from 'three/tsl';
+import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 /*---------------------------//
         LOCAL VARIABLES
 //---------------------------*/
+
+const lilgui = new GUI();
+
+const loader = new THREE.TextureLoader();
+const groundPlaneTexture = loader.load("./checker.png");
+groundPlaneTexture.wrapS = THREE.RepeatWrapping;
+groundPlaneTexture.wrapT = THREE.RepeatWrapping;
+groundPlaneTexture.magFilter = THREE.NearestFilter;
+groundPlaneTexture.colorSpace = THREE.SRGBColorSpace;
+const repeats = 10/2;
+groundPlaneTexture.repeat.set(repeats,repeats); // X, Y
 
 const scene = new THREE.Scene();
 const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -94,13 +107,43 @@ gameObjects.push(cube);
 
 // Plane
 const groundPlane = new THREE.Mesh(
-  new THREE.PlaneGeometry(10,10,1,1),
-  new THREE.MeshBasicMaterial({color: 'gray', side: THREE.DoubleSide})
+  new THREE.PlaneGeometry(10,10),
+  new THREE.MeshPhongMaterial({
+    map: groundPlaneTexture,
+    side: THREE.DoubleSide,
+  })
 )
 groundPlane.rotateX(Math.PI/2)
 scene.add(groundPlane);
 gameObjects.push(groundPlane);
 
+// Lighting
+
+class ColorGUIHelper {
+  constructor(object, prop) {
+    this.object = object;
+    this.prop = prop;
+  }
+  get value() {
+    return '#' + this.object[this.prop].getHexString();
+  }
+  set value(hexString) {
+    this.object[this.prop].set(hexString);
+  }
+}
+
+const color = 0xFFFFFF;
+const intensity = 4;
+const light = new THREE.AmbientLight(color, intensity);
+scene.add(light)
+const color2 = 0xd43535;
+const light2 = new THREE.AmbientLight(color2, intensity);
+light2.lookAt(mainCharacter.character.position)
+light2.position.copy(mainCharacter.character.positon + new THREE.Vector3(0,5,5))
+scene.add(light2)
+
+lilgui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
+lilgui.add(light, 'intensity', 0, 5, 0.01);
 /*---------------------------//
        MAIN RENDER LOOP
 //---------------------------*/
