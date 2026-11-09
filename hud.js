@@ -6,6 +6,11 @@ export class HUD {
     constructor(scene = THREE.Scene, camera = THREE.Camera){
         this.scene = scene;
         this.camera = camera;
+
+        // Build Menu 
+        
+
+
     }
 
     square(){
@@ -18,6 +23,9 @@ export class HUD {
         square.renderOrder = 9999;
         this.camera.add(square)
     }
+
+    
+
 }
 
 // Cube rendered to camera to render as 2D

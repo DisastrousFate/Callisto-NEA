@@ -24,8 +24,40 @@ h1 {
     width: 100%;
     text-align:center;
     z-index: 100;
-    display:block;
+    display:grid;
+    grid-area: lower-toolbar;
+    grid-template-columns: repeat(2, minmax(70px, 1fr));
+    gap: 10px;
+    justify-items: center;
+    align-items: center;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    background-color: rgb(107, 107, 107);
 }
+
+#lower-menu-button_div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 120px;
+}
+
+#lower-menu-button {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    background-color: rgb(221, 221, 221);
+    border: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 /* 
 #side-toolbar{
     position:absolute;

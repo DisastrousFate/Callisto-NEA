@@ -24,6 +24,10 @@ export class Character{
     this.deltaZ;
 
   }
+
+  move(){
+    
+  }
 }
 
 // Doesn't use 'OrbitControls'
@@ -45,7 +49,6 @@ export class _externalCamera{
 
   animate(){
     const target = new THREE.Vector3();
-    this.cameraOffset.copy(new THREE.Vector3(this.cameraOffset.x - 0.1, this.cameraOffset.y , this.cameraOffset.z+0.1))
     this.character.character.getWorldPosition(target);
     this.camera.position.copy(target).add(this.cameraOffset);
     this.camera.lookAt(target);
@@ -66,7 +69,10 @@ export class externalCamera{
     this.orbitDistance = 6;
 
     this.controls = new OrbitControls(camera, renderer.domElement);
-    this.controls.target.copy(this.character.character.position)
+
+    this.controls.minDistance = 2;   // closest allowed
+    this.controls.maxDistance = 20;  // farthest allowed
+    //this.controls.target.copy(this.character.character.position)
     this.controls.rotateSpeed = 0.7;
     
     this.controls.enablePan = false;
@@ -75,7 +81,7 @@ export class externalCamera{
   }
 
   animate(){
-
-    this.controls.update();
+    // this.controls.update();
+  
   }
 }

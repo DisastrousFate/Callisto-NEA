@@ -7,7 +7,7 @@ export function findMesh(meshName) {
     let meshFound = false;
     let foundMesh;
     do {
-        currentMesh = _findMesh(meshName);
+        let currentMesh = _findMesh(meshName);
         if(currentMesh != null){
             meshFound = true;
             foundMesh = currentMesh;
