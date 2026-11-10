@@ -6,11 +6,50 @@ export class HUD {
     constructor(scene = THREE.Scene, camera = THREE.Camera){
         this.scene = scene;
         this.camera = camera;
+    }
 
-        // Build Menu 
-        
+    setupBuildMenu(onPlace){
+        this.buildMenu = document.getElementById('build-menu-div');
+        this.buildMenuButton = document.getElementById('lower-menu-button');
+        this.buildItemPreview = this.buildMenu?.querySelector('.build-item-preview');
+        this.buildPlaceButton = this.buildMenu?.querySelector('.build-place-button');
+        this.buildItemButtons = this.buildMenu
+            ? [...this.buildMenu.querySelectorAll('[data-build-item]')]
+            : [];
 
+        if (!this.buildMenu || !this.buildMenuButton || !this.buildItemPreview ||
+            !this.buildPlaceButton || this.buildItemButtons.length === 0){
+            throw new Error('Build menu markup is missing required elements.');
+        }
 
+        this.selectedBuildItem = null;
+
+        this.buildMenuButton.addEventListener('click', () => {
+            this.buildMenu.classList.toggle('is-hidden');
+        });
+
+        this.buildItemButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                if (button.disabled) return;
+                this.selectedBuildItem = button.dataset.buildItem;
+                this.buildItemPreview.textContent = button.dataset.buildLabel;
+                this.buildPlaceButton.disabled = false;
+            });
+        });
+
+        this.buildPlaceButton.addEventListener('click', () => {
+            if (!this.selectedBuildItem || onPlace(this.selectedBuildItem) === false) return;
+            this.buildMenu.classList.add('is-hidden');
+        });
+    }
+
+    setBuildItemAvailable(itemId, available){
+        const button = this.buildItemButtons.find((item) => item.dataset.buildItem === itemId);
+        if (!button){
+            throw new Error(`Unknown build item: ${itemId}`);
+        }
+
+        button.disabled = !available;
     }
 
     square(){

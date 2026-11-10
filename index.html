@@ -23,7 +23,32 @@
     <div id = 'HTML'>
 
       <div id = 'lower-toolbar'>
-        
+        <div class="lower-menu-button_div">
+          <button id="lower-menu-button" type="button">Build</button>
+        </div>
+        <div class="lower-menu-button_div">
+          <button id="inventory-menu-button" type="button">Inventory</button>
+        </div>
+      </div>
+
+      <div id="build-menu-div" class="is-hidden">
+        <h2 class="build-menu-title">Build Menu</h2>
+        <div class="build-menu-content">
+          <div class="build-item-grid" aria-label="Build items">
+            <button class="build-item-button" type="button" data-build-item="jack-pump" data-build-label="Jack Pump" disabled>Jack Pump</button>
+            <button class="build-item-button" type="button" disabled>Item</button>
+            <button class="build-item-button" type="button" disabled>Item</button>
+            <button class="build-item-button" type="button" disabled>Item</button>
+            <button class="build-item-button" type="button" disabled>Item</button>
+            <button class="build-item-button" type="button" disabled>Item</button>
+            <button class="build-item-button" type="button" disabled>Item</button>
+            <button class="build-item-button" type="button" disabled>Item</button>
+          </div>
+          <div class="build-item-details">
+            <div class="build-item-preview">Select an item</div>
+            <button class="build-place-button" type="button" disabled>Place</button>
+          </div>
+        </div>
       </div>
 
     </div>

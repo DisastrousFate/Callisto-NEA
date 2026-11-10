@@ -33,6 +33,13 @@ import { ThreeMFLoader } from 'three/examples/jsm/Addons.js';
 export class Input{
     constructor(canvas, character, camera){
         this.previewPlacement_b = false;
+        this.onPlacementConfirm = () => false;
+        this.keys = new Set();
+        this.velocity = new THREE.Vector3();
+        this.forward = new THREE.Vector3();
+        this.right = new THREE.Vector3();
+        this.up = new THREE.Vector3(0, 1, 0);
+        this.desiredVelocity = new THREE.Vector3();
 
         canvas.addEventListener('focus', () => {
             // Complete focus on screen.
@@ -42,53 +49,55 @@ export class Input{
             // No focus, go to ingame menu
         });
 
-        canvas.addEventListener('keydown', (key) => {
-            console.log(key.key)
-
-            const forward = new THREE.Vector3();
-            camera.camera.getWorldDirection(forward);
-            forward.y = 0;
-            forward.normalize();
-
-            const right = new THREE.Vector3()
-                .crossVectors(forward, new THREE.Vector3(0, 1, 0))
-                .normalize();
-
-            const nextPosition = character.character.position.clone();
-
-            switch (key.key) {
-                case 'w':
-                    nextPosition.addScaledVector(forward, 0.1);
-                    break;
-                case 's':
-                    nextPosition.addScaledVector(forward, -0.1);
-                    break;
-                case 'a':
-                    nextPosition.addScaledVector(right, -0.1);
-                    break;
-                case 'd':
-                    nextPosition.addScaledVector(right, 0.1);
-                    break;
-                case 'ArrowLeft':
-                    break;
-                case 'ArrowRight':
-                    break;
-                case 'e':
-                    if(this.previewPlacement_b == true){
-                        this.previewPlacement_b = false;
-                    }
-                    else{
-                        this.previewPlacement_b = true;
-                    }
-                    break;
+        window.addEventListener('keydown', (key) => {
+            if (key.target instanceof HTMLElement &&
+                (key.target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(key.target.tagName))) {
+                return;
             }
 
-            nextPosition.y = character.character.position.y;
-            character.character.position.copy(nextPosition);
-
-            
-            
+            const pressedKey = key.key.toLowerCase();
+            if (['w', 'a', 's', 'd'].includes(pressedKey)) {
+                this.keys.add(pressedKey);
+            } else if (pressedKey === 'e' && !key.repeat) {
+                if (this.previewPlacement_b && this.onPlacementConfirm()) {
+                    this.previewPlacement_b = false;
+                }
+            }
         });
 
+        window.addEventListener('keyup', (key) => {
+            this.keys.delete(key.key.toLowerCase());
+        });
+
+        window.addEventListener('blur', () => {
+            this.keys.clear();
+            this.velocity.set(0, 0, 0);
+        });
+    }
+
+    update(delta, character, camera){
+        camera.camera.getWorldDirection(this.forward);
+        this.forward.y = 0;
+        this.forward.normalize();
+        this.right.crossVectors(this.forward, this.up).normalize();
+
+        // Add movement velocity on button input, resulting in smooth calculated movement.
+
+        this.desiredVelocity.set(0, 0, 0);
+        if (this.keys.has('w')) this.desiredVelocity.add(this.forward);
+        if (this.keys.has('s')) this.desiredVelocity.sub(this.forward);
+        if (this.keys.has('d')) this.desiredVelocity.add(this.right);
+        if (this.keys.has('a')) this.desiredVelocity.sub(this.right);
+
+        if (this.desiredVelocity.lengthSq() > 0) {
+            this.desiredVelocity.normalize().multiplyScalar(3);
+        }
+
+        const response = this.desiredVelocity.lengthSq() > 0 ? 10 : 14;
+        const smoothing = 1 - Math.exp(-response * delta);
+
+        // Interpolate between current velocity and next velocity value for smoothness.
+        this.velocity.lerp(this.desiredVelocity, smoothing);
+        character.character.position.addScaledVector(this.velocity, delta);
     }
 }

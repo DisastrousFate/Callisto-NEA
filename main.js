@@ -32,18 +32,32 @@ import { objectGroup } from 'three/tsl';
 
 const lilgui = new GUI();
 
-const texLoader = new THREE.TextureLoader();
 const modelLoader = new GLTFLoader();
-
-const groundPlaneTexture = texLoader.load("./checker.png");
+const textureLoader = new THREE.TextureLoader();
+const groundTexturePath = './assets/callisto-ground.png';
+const groundTextureRepeat = 20;
+const groundPlaneTexture = textureLoader.load(groundTexturePath);
+groundPlaneTexture.colorSpace = THREE.SRGBColorSpace;
 groundPlaneTexture.wrapS = THREE.RepeatWrapping;
 groundPlaneTexture.wrapT = THREE.RepeatWrapping;
-groundPlaneTexture.magFilter = THREE.NearestFilter;
-groundPlaneTexture.colorSpace = THREE.SRGBColorSpace;
-const repeats = 100/2;
-groundPlaneTexture.repeat.set(repeats,repeats); // X, Y
+groundPlaneTexture.repeat.set(groundTextureRepeat, groundTextureRepeat);
 
 const scene = new THREE.Scene();
+const skyboxFaces = [
+  './assets/space-skybox/right.png',
+  './assets/space-skybox/left.png',
+  './assets/space-skybox/top.png',
+  './assets/space-skybox/bottom.png',
+  './assets/space-skybox/front.png',
+  './assets/space-skybox/back.png',
+];
+scene.background = new THREE.CubeTextureLoader().load(
+  skyboxFaces,
+  undefined,
+  undefined,
+  (error) => console.error('Failed to load cubemap skybox images.', error)
+);
+scene.background.colorSpace = THREE.SRGBColorSpace;
 const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const mainRenderer = new THREE.WebGLRenderer({antialias: true});
 const mainCharacter = new character.Character(scene);
@@ -81,34 +95,41 @@ div_2D.appendChild(HTMLRenderer.domElement);
 
 const lower_toolbar = document.getElementById('lower-toolbar');
 
-const build_menu_button_div = document.createElement('div');
-build_menu_button_div.id = 'lower-menu-button_div';
-lower_toolbar.appendChild(build_menu_button_div);
-
-const build_menu_button = document.createElement('p');
-build_menu_button.id = 'lower-menu-button'
-build_menu_button.innerHTML = 'Build';
-build_menu_button.style.backgroundColor = 'White'
-build_menu_button_div.appendChild(build_menu_button);
-
-const inventory_menu_button_div = document.createElement('div');
-inventory_menu_button_div.id = 'lower-menu-button_div';
-lower_toolbar.appendChild(inventory_menu_button_div);
-
-const inventory_menu_button = document.createElement('p');
-inventory_menu_button.id = 'lower-menu-button'
-inventory_menu_button.innerHTML = 'Inventory';
-inventory_menu_button.style.backgroundColor = 'White'
-inventory_menu_button_div.appendChild(inventory_menu_button);
-
-// const lowerToolbarText = document.createElement('h1');
-// lowerToolbarText.innerHTML = 'Lower Toolbar';
-// lower_toolbar.appendChild(lowerToolbarText);
-
+const placeableTemplates = new Map();
+const placeableMixers = new Set();
+const animationClock = new THREE.Clock();
+let activePlaceable = null;
+let hasPlacementPosition = false;
 
 // Cube rendered to camera to render as 2D
 
 const HUD = new hud.HUD(scene, pCam);
+HUD.setupBuildMenu((itemId) => {
+  const template = placeableTemplates.get(itemId);
+  if (!template || activePlaceable) return false;
+
+  activePlaceable = template.scene.clone(true);
+  activePlaceable.visible = false;
+  hasPlacementPosition = false;
+  if (template.animations.length > 0) {
+    const mixer = new THREE.AnimationMixer(activePlaceable);
+    for (const clip of template.animations) {
+      mixer.clipAction(clip).play();
+    }
+    placeableMixers.add(mixer);
+  }
+  scene.add(activePlaceable);
+  gameInput.previewPlacement_b = true;
+  return true;
+});
+gameInput.onPlacementConfirm = () => {
+  if (!activePlaceable || !hasPlacementPosition) return false;
+
+  gameObjects.push(activePlaceable);
+  activePlaceable = null;
+  hasPlacementPosition = false;
+  return true;
+};
 HUD.square();
 scene.add(pCam);
 
@@ -116,15 +137,7 @@ scene.add(pCam);
         MISC GEOMETRY
 //---------------------------*/
 
-// Cube
-const geometry = new THREE.BoxGeometry( .5, .5, .5 );
-const material = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
-const cube = new THREE.Mesh( geometry, material );
 
-const label1 = new graphics.TextLabel('Cube', lower_toolbar);
-cube.add(label1.textObject);
-scene.add( cube );
-gameObjects.push(cube);
 
 // Plane
 const groundPlane = new THREE.Mesh(
@@ -161,13 +174,13 @@ scene.add(light)
 lilgui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
 lilgui.add(light, 'intensity', 0, 5, 0.01);
 
-// Placement - Oil Pump
-let jackPump;
-
+// Placeable asset templates
 modelLoader.load('./assets/jack_pump/scene.gltf', function(gltf){
-  jackPump = gltf.scene;
-  gameObjects.push(jackPump);
-  scene.add(jackPump);
+  placeableTemplates.set('jack-pump', {
+    scene: gltf.scene,
+    animations: gltf.animations,
+  });
+  HUD.setBuildItemAvailable('jack-pump', true);
 }, undefined, function(error){
   console.error(error);
 });
@@ -201,6 +214,7 @@ function updatePlacementPreview(event) {
 
   previewObject.position.set(hitPoint.x, hitPoint.y + 0.5, hitPoint.z);
   previewObject.visible = true;
+  hasPlacementPosition = true;
 }
 
 function previewPlacement(object, enabled) {
@@ -233,13 +247,14 @@ function resizeRendererToDisplaySize(renderer) {
 function render( time ) {
   resizeRendererToDisplaySize(mainRenderer);
   resizeRendererToDisplaySize(HTMLRenderer);
+  const delta = animationClock.getDelta();
+  gameInput.update(delta, mainCharacter, externalCamera);
+  mainCharacter.update(delta, gameInput.velocity);
+  for (const mixer of placeableMixers) {
+    mixer.update(delta);
+  }
 
-  cube.rotation.x = time / 2000;
-  cube.rotation.y = time / 1000;
-  cube.translateZ(0.01);
-  cube.castShadow = true;
-
-  previewPlacement(jackPump, gameInput.previewPlacement_b);
+  previewPlacement(activePlaceable, gameInput.previewPlacement_b);
 
   //orbitControls.animate(mainCharacter.character);
   externalCamera.animate();
