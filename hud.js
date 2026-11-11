@@ -11,21 +11,30 @@ export class HUD {
     setupBuildMenu(onPlace){
         this.buildMenu = document.getElementById('build-menu-div');
         this.buildMenuButton = document.getElementById('lower-menu-button');
-        this.buildItemPreview = this.buildMenu?.querySelector('.build-item-preview');
+        this.buildItemPreview = this.buildMenu?.querySelector('.build-item-preview'); // ? avoids undefined errors.
         this.buildPlaceButton = this.buildMenu?.querySelector('.build-place-button');
-        this.buildItemButtons = this.buildMenu
-            ? [...this.buildMenu.querySelectorAll('[data-build-item]')]
-            : [];
+        this.buildItemButtons = [];
+        if (this.buildMenu) {
+
+            const buttons = this.buildMenu.querySelectorAll('[data-build-item]');
+
+            for (let i = 0; i < buttons.length; i++) {
+                this.buildItemButtons.push(buttons[i]);
+            }
+        }
 
         if (!this.buildMenu || !this.buildMenuButton || !this.buildItemPreview ||
             !this.buildPlaceButton || this.buildItemButtons.length === 0){
+
             throw new Error('Build menu markup is missing required elements.');
         }
 
         this.selectedBuildItem = null;
 
+
+        // Change visiblity of build menu when pressed.
         this.buildMenuButton.addEventListener('click', () => {
-            this.buildMenu.classList.toggle('is-hidden');
+            this.buildMenu.classList.toggle('is-hidden'); // remove attribute responsible
         });
 
         this.buildItemButtons.forEach((button) => {
@@ -45,23 +54,14 @@ export class HUD {
 
     setBuildItemAvailable(itemId, available){
         const button = this.buildItemButtons.find((item) => item.dataset.buildItem === itemId);
-        if (!button){
+
+        if (!button) {
             throw new Error(`Unknown build item: ${itemId}`);
         }
 
         button.disabled = !available;
     }
 
-    square(){
-        const geometry = new THREE.PlaneGeometry(.5,.5,1,1);
-        const material = new THREE.MeshBasicMaterial({ color: 'white' });
-        const square = new THREE.Mesh(geometry, material);
-        square.position.x = 0;
-        square.position.y = 2;
-        square.position.z = -5; // Dont block or be behind camera!
-        square.renderOrder = 9999;
-        this.camera.add(square)
-    }
 
     
 

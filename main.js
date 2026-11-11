@@ -130,7 +130,6 @@ gameInput.onPlacementConfirm = () => {
   hasPlacementPosition = false;
   return true;
 };
-HUD.square();
 scene.add(pCam);
 
 /*---------------------------//
