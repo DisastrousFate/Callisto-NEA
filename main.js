@@ -184,9 +184,12 @@ modelLoader.load('./assets/jack_pump/scene.gltf', function(gltf){
   console.error(error);
 });
 
+// Placement System
+
 const raycaster = new THREE.Raycaster();
 let pointer2D = new THREE.Vector2();
 let previewObject = null;
+const GRID_SIZE = 1; // world units per grid cell
 
 function updatePlacementPreview(event) {
   // Only detect cursor if its on the main window.
@@ -211,7 +214,12 @@ function updatePlacementPreview(event) {
   // Vector 3 position
   const hitPoint = intersects[0].point;
 
-  previewObject.position.set(hitPoint.x, hitPoint.y + 0.5, hitPoint.z);
+  //previewObject.position.set(hitPoint.x, hitPoint.y + 0.5, hitPoint.z);
+
+  const snappedX = Math.round(hitPoint.x / GRID_SIZE) * GRID_SIZE;
+  const snappedZ = Math.round(hitPoint.z / GRID_SIZE) * GRID_SIZE;
+
+  previewObject.position.set(snappedX, hitPoint.y, snappedZ);
   previewObject.visible = true;
   hasPlacementPosition = true;
 }

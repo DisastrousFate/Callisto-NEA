@@ -15,26 +15,21 @@ export class HUD {
         this.buildPlaceButton = this.buildMenu?.querySelector('.build-place-button');
         this.buildItemButtons = [];
         if (this.buildMenu) {
-
             const buttons = this.buildMenu.querySelectorAll('[data-build-item]');
-
-            for (let i = 0; i < buttons.length; i++) {
-                this.buildItemButtons.push(buttons[i]);
+            for (let index = 0; index < buttons.length; index++) {
+                this.buildItemButtons.push(buttons[index]);
             }
         }
 
         if (!this.buildMenu || !this.buildMenuButton || !this.buildItemPreview ||
             !this.buildPlaceButton || this.buildItemButtons.length === 0){
-
             throw new Error('Build menu markup is missing required elements.');
         }
 
         this.selectedBuildItem = null;
 
-
-        // Change visiblity of build menu when pressed.
         this.buildMenuButton.addEventListener('click', () => {
-            this.buildMenu.classList.toggle('is-hidden'); // remove attribute responsible
+            this.buildMenu.classList.toggle('is-hidden');
         });
 
         this.buildItemButtons.forEach((button) => {
