@@ -63,8 +63,7 @@ export class Character{
         if (material) object.material = material;
       });
 
-      this.character.add(model);
-
+      // Measure before parenting so the player position does not offset the model.
       const bounds = new THREE.Box3().setFromObject(model);
       const size = bounds.getSize(new THREE.Vector3());
       const modelScale = 1.8 / size.y;
@@ -75,6 +74,7 @@ export class Character{
         -(bounds.min.z + bounds.max.z) * modelScale / 2
       );
 
+      this.character.add(model);
       this.mixer = new THREE.AnimationMixer(model);
       const idleClip = gltf.animations.find((clip) => clip.name.toLowerCase() === 'idle');
       const walkClip = gltf.animations.find((clip) => clip.name.toLowerCase().includes('walk'));
