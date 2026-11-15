@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 
 export class Character{
-  constructor(scene){
+  constructor(scene, astronaut){
     this.character = new THREE.Group();
     this.character.position.set(0, 1, 0);
     this.character.name = 'mainCharacter';
@@ -22,18 +22,14 @@ export class Character{
     // Astro Model + Textures
 
     const loader = new GLTFLoader();
-    loader.load('./assets/walking_astronaut/scene.gltf', (gltf) => {
+    loader.load(astronaut.model, (gltf) => {
 
       const model = gltf.scene;
       this.model = model;
 
       const textureLoader = new THREE.TextureLoader();
-      const loadDiffuseMap = (filename) => {
-        const texture = textureLoader.load(
-          `./assets/walking_astronaut/textures/${filename}`,
-          undefined,
-          undefined,
-        );
+      const loadDiffuseMap = (path) => {
+        const texture = textureLoader.load(path);
 
         texture.flipY = false;
         texture.colorSpace = THREE.SRGBColorSpace;
@@ -44,7 +40,7 @@ export class Character{
 
       const materials = new Map([
         ['material_0', new THREE.MeshStandardMaterial({
-          map: loadDiffuseMap('material_0_diffuse.png'),
+          map: loadDiffuseMap(astronaut.textures.material_0),
           roughness: 0.9,
         })],
         ['material_1', new THREE.MeshStandardMaterial({
@@ -52,22 +48,31 @@ export class Character{
           roughness: 0.85,
         })],
         ['material_2', new THREE.MeshStandardMaterial({
-          map: loadDiffuseMap('material_2_diffuse.png'),
+          map: loadDiffuseMap(astronaut.textures.material_2),
           roughness: 0.9,
         })],
       ]);
 
-      model.traverse((object) => {
-        if (!object.isMesh) return;
-        const material = materials.get(object.material.name);
-        if (material) object.material = material;
-      });
+      // A model can contain groups inside other groups.
+      // Check this object, then call the same function on each child.
+      function applyMaterials(object) {
+        if (object.isMesh) {
+          const material = materials.get(object.material.name);
+          if (material) object.material = material;
+        }
 
-      this.character.add(model);
+        // If there are no children, the loop ends this call.
+        for (const child of object.children) {
+          applyMaterials(child);
+        }
+      }
 
+      applyMaterials(model);
+
+      // Measure before parenting so the player position does not offset the model.
       const bounds = new THREE.Box3().setFromObject(model);
       const size = bounds.getSize(new THREE.Vector3());
-      const modelScale = 1.8 / size.y;
+      const modelScale = astronaut.height / size.y;
       model.scale.setScalar(modelScale);
       model.position.set(
         -(bounds.min.x + bounds.max.x) * modelScale / 2,
@@ -75,6 +80,7 @@ export class Character{
         -(bounds.min.z + bounds.max.z) * modelScale / 2
       );
 
+      this.character.add(model);
       this.mixer = new THREE.AnimationMixer(model);
       const idleClip = gltf.animations.find((clip) => clip.name.toLowerCase() === 'idle');
       const walkClip = gltf.animations.find((clip) => clip.name.toLowerCase().includes('walk'));
