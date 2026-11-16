@@ -22,9 +22,21 @@ import * as graphics from './graphics.js';
 import * as hud from './hud.js';
 import * as character from './character.js';
 import * as input from './input.js';
+import * as game from './game.js';
 import { cameraFar, texture } from 'three/tsl';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { objectGroup } from 'three/tsl';
+
+/*---------------------------//
+    LOAD EXTERNAL DATA
+//---------------------------*/
+
+const response = await fetch('./gamedata.json');
+if (!response.ok) {
+  throw new Error(`Failed to load gamedata.json: ${response.status} ${response.statusText}`);
+}
+const gameText = await response.json();
+const gameData = JSON.parse(gameText);
 
 /*---------------------------//
         LOCAL VARIABLES
@@ -60,6 +72,8 @@ scene.background.colorSpace = THREE.SRGBColorSpace;
 const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
 const mainRenderer = new THREE.WebGLRenderer({antialias: true});
 const mainCharacter = new character.Character(scene);
+
+const game = new game.Game(gameData);
 
 const externalCamera = new character.externalCamera(scene, pCam, mainRenderer, mainCharacter);
 
