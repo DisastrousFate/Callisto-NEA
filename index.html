@@ -7,12 +7,10 @@
     <script type="module" src="./graphics.js"></script>
     <script type="module" src="./hud.js"></script>
     <script type="module" src="./input.js"></script>
-    <script type="module" src="./character.js"></script>
-    <script type="module" src="./game.js"></script>
 
     <link rel="stylesheet" href="./styles.css">
 
-    <title>My first three.js app</title>
+    <title>Callisto</title>
   </head>
   <body>
 
@@ -24,6 +22,24 @@
 
     <div id = 'HTML'>
 
+      <div id="game-panel">
+        <p id="game-status"></p>
+        <progress id="health-bar" max="100" value="100" aria-label="Player health"></progress>
+        <p id="game-message" role="status"></p>
+        <details><summary>Controls and building costs</summary><p>WASD: move · Drag: orbit · Scroll: zoom · E: place · Escape: cancel · F: attack</p>
+        <p id="building-costs"></p></details>
+        <button id="attack-button" type="button">Attack nearest enemy</button>
+        <button id="train-soldier" type="button">Train soldier</button>
+        <button id="recycle-button" type="button">Recycle nearby building</button>
+        <button id="switch-team" type="button">Switch local team</button>
+      </div>
+      <div id="inventory-menu-div" class="is-hidden">
+        <h2>Inventory</h2>
+        <p id="inventory-contents"></p>
+        <p>Iridium is shared by your team's buildings and soldiers. Each team has its own inventory.</p>
+        <button id="close-inventory" type="button">Close</button>
+      </div>
+
       <div id = 'lower-toolbar'>
         <div class="lower-menu-button_div">
           <button id="lower-menu-button" type="button">Build</button>
@@ -34,12 +50,12 @@
       </div>
 
       <div id="build-menu-div" class="is-hidden">
-        <h2 class="build-menu-title">Build Menu</h2>
+        <h2 class="build-menu-title">Build Menu</h2><button id="close-build" type="button">Close</button>
         <div class="build-menu-content">
           <div class="build-item-grid" aria-label="Build items">
-            <button class="build-item-button" type="button" data-build-item="jack-pump" data-build-label="Jack Pump" disabled>Jack Pump</button>
-            <button class="build-item-button" type="button" disabled>Item</button>
-            <button class="build-item-button" type="button" disabled>Item</button>
+            <button class="build-item-button" type="button" data-build-item="jack-pump" disabled></button>
+            <button class="build-item-button" type="button" data-build-item="respawn-beacon" disabled></button>
+            <button class="build-item-button" type="button" data-build-item="barracks" disabled></button>
             <button class="build-item-button" type="button" disabled>Item</button>
             <button class="build-item-button" type="button" disabled>Item</button>
             <button class="build-item-button" type="button" disabled>Item</button>

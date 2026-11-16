@@ -220,3 +220,22 @@ h1 {
     z-index: 100;
     display:block;
 } */
+/* Live game information uses the same plain grey style as the build menu. */
+body { margin: 0; font-family: Arial, sans-serif; }
+#game-panel {
+    position: absolute; top: 12px; left: 12px; z-index: 100;
+    max-width: min(650px, calc(100vw - 48px)); padding: 10px 14px;
+    background: rgba(221, 221, 221, 0.94); color: #111;
+}
+#game-panel p { margin: 5px 0; font-size: 14px; }
+#game-panel button, #close-build, #close-inventory {
+    padding: 7px 10px; margin: 3px; cursor: pointer;
+}
+#health-bar { width: 180px; accent-color: #4b9bff; }
+#inventory-menu-div {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 101; width: min(500px, calc(100vw - 64px));
+    padding: 24px; background: #c5c5c5; border-radius: 24px;
+}
+#inventory-menu-div.is-hidden { display: none; }
+#close-build { position: absolute; right: 28px; top: 8px; }

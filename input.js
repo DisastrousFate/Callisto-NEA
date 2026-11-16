@@ -34,6 +34,8 @@ export class Input{
     constructor(canvas, character, camera){
         this.previewPlacement_b = false;
         this.onPlacementConfirm = () => false;
+        this.onPlacementCancel = () => {};
+        this.onAttack = () => {};
         this.keys = new Set();
         this.velocity = new THREE.Vector3();
         this.forward = new THREE.Vector3();
@@ -58,6 +60,10 @@ export class Input{
             const pressedKey = key.key.toLowerCase();
             if (['w', 'a', 's', 'd'].includes(pressedKey)) {
                 this.keys.add(pressedKey);
+            } else if (pressedKey === 'escape') {
+                this.onPlacementCancel();
+            } else if (pressedKey === 'f' && !key.repeat) {
+                this.onAttack();
             } else if (pressedKey === 'e' && !key.repeat) {
                 if (this.previewPlacement_b && this.onPlacementConfirm()) {
                     this.previewPlacement_b = false;

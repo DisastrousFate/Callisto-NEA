@@ -7,7 +7,7 @@ export class Inventory {
     }
 
     add(value) {
-        if(value <= 0){
+        if(!Number.isFinite(value) || value <= 0){
             return false; // cannot add.
         } else{
             this.iridium += value;
@@ -16,7 +16,7 @@ export class Inventory {
     }
 
     spend(value) {
-        if(value <= 0){
+        if(!Number.isFinite(value) || value <= 0){
             return false; // cannot spend.
         } else if(this.iridium < value){
             return false; // not enough to spend.
@@ -44,13 +44,12 @@ export class Player {
     }
 
     take_Damage(value){
-        if(value <= 0){
+        if(this.health <= 0 || !Number.isFinite(value) || value <= 0){
             return false; // cannot take damage.
         } else{
-            this.health -= value;
-            if(this.health <= 0){
+            this.health = Math.max(0, this.health - value);
+            if(this.health === 0){
                 this.respawnTimer = 5; // respawn in 5 seconds
-                this.health = 100; // reset health
             }
             return true;
         }
@@ -59,7 +58,7 @@ export class Player {
 
 /*------------SOLDIERS--------------*/
 
-export class Solider {
+export class Soldier {
     constructor(team, x, z) {
         this.team = team;
         this.x = x;
@@ -78,7 +77,7 @@ export class Game {
         this.buildItems = gameData.buildItems
 
         this.players = [ // set 2 players
-            new Player(0,-12,0),
+            new Player(0,0,0),
             new Player(1,12,0)
         ]
 
@@ -97,16 +96,14 @@ export class Game {
 
         this.activeTeam = 0; // team 0 starts first
         this.nextId = 1;
-        this.message = 'build something!';
+        this.message = 'Build a pump near a purple resource node to collect iridium.';
         
 
         // -- //
 
-        this.add_building('respawn-beaacon', 0, -12, -4);
-        this.add_building('respawn-beaacon', 1, 12, -4);
+        this.add_building('respawn-beacon', 0, -12, -4);
+        this.add_building('respawn-beacon', 1, 12, -4);
 
-
-        // add shit.
 
     }
 
@@ -125,7 +122,7 @@ export class Game {
             team: team,
             x: x,
             z: z,
-            health: this.gameData.buildItems[type].health,
+            health: this.buildItems[type].health,
             productionTimer: 0
 
         }
@@ -138,18 +135,41 @@ export class Game {
 
     placementError(type, x, z){
         // check if placement is valid
+        const item = this.buildItems[type];
+        const position = {x: x, z: z};
+        if(!item || !Object.hasOwn(this.buildItems, type)){
+            return 'unknown building';
+        }
+        if(this.player.health <= 0){
+            return 'wait until you have respawned';
+        }
+        if(!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 47 || Math.abs(z) > 47){
+            return 'place the building inside the map';
+        }
+        if(this.distance(this.player, position) > 15){
+            return 'build within 15 units of your player';
+        }
 
         for(const building of this.buildings){
-            if(this.distance(building, {x:x, z:z}) < 2){
+            if(building.health > 0 && this.distance(building, position) < 2){
                 return 'too close to another building';
             }
         }
-        
-        for(const node of this.resourceNodes){
-            if(this.distance(node, {x:x, z:z}) > 15){
-                return 'too far to a resource node';
+
+        // Only pumps need a node. One nearby node is enough.
+        if(item.production){
+            let nearNode = false;
+            for(const node of this.resourceNodes){
+                if(this.distance(node, position) <= item.production.nodeRange){
+                    nearNode = true;
+                    break;
+                }
+            }
+            if(!nearNode){
+                return 'too far from a resource node';
             }
         }
+
         return null; // no error found
     }
 
@@ -160,9 +180,12 @@ export class Game {
             return false;
         }
         
-        this.player.Inventory.spend(this.buildItems[type].cost);
+        if(!this.player.Inventory.spend(this.buildItems[type].cost)){
+            this.message = 'not enough iridium!';
+            return false;
+        }
 
-        const building = this.add_building(type, this.activeTeam, x, z);
+        this.add_building(type, this.activeTeam, x, z);
         this.message = 'building placed!';
         return true;
     }
@@ -177,7 +200,7 @@ export class Game {
 
         let barracks = null;
         for (const building of this.buildings){
-            if(building.team === this.activeTeam && building.type === 'barracks'){
+            if(building.team === this.activeTeam && building.type === 'barracks' && building.health > 0){
                 barracks = building;
                 break;
             }
@@ -188,9 +211,9 @@ export class Game {
             return false;
         }
         
-        const armySize = 0;
+        let armySize = 0;
         for(const soldier of this.soldiers){
-            if(soldier.team === this.activeTeam){
+            if(soldier.team === this.activeTeam && soldier.health > 0){
                 armySize++;
             }
         }
@@ -205,7 +228,7 @@ export class Game {
             return false;
         }
 
-        this.soldiers.push(new Solider(this.activeTeam, barracks.x, barracks.z + 2));
+        this.soldiers.push(new Soldier(this.activeTeam, barracks.x, barracks.z + 2));
         this.message = 'soldier trained!';
         return true;
 
@@ -221,7 +244,7 @@ export class Game {
             this.message = 'no enemies in range!';
             return false;
         }
-        nearest.health -= 20;
+        this.damage(nearest, 20);
         player.attackTimer = 1;
         this.message = 'attacked enemy!';
         return true;
@@ -246,32 +269,56 @@ export class Game {
 
     }
 
+    damage(target, amount){
+        if(target instanceof Player){
+            target.take_Damage(amount);
+        } else{
+            target.health = Math.max(0, target.health - amount);
+        }
+    }
+
+    recycleBuilding(){
+        if(this.player.health <= 0){
+            return false;
+        }
+        for(const building of this.buildings){
+            if(building.team === this.activeTeam && building.health > 0 && this.distance(building, this.player) <= 6){
+                building.health = 0;
+                this.player.Inventory.add(Math.floor(this.buildItems[building.type].cost / 2));
+                this.removeDestroyed();
+                this.message = 'building recycled!';
+                return true;
+            }
+        }
+        this.message = 'move closer to one of your buildings';
+        return false;
+    }
+
+    removeDestroyed(){
+        this.buildings = this.buildings.filter(building => building.health > 0);
+        this.soldiers = this.soldiers.filter(soldier => soldier.health > 0);
+    }
+
     /*------------UPDATE--------------*/
 
     update(delta){
         // update timers
 
-        if(delta <= 0){
+        if(!Number.isFinite(delta) || delta <= 0){
             return;
         }
 
         for(const player of this.players){
-            if(player.respawnTimer > 0){
-                player.respawnTimer -= delta;
-                if(player.respawnTimer <= 0){
-                    player.health = player.maxHealth;
-                    this.message = 'player respawned!';
-                }
+            player.attackTimer = Math.max(0, player.attackTimer - delta);
+            if(player.health > 0){
+                continue;
             }
-
-            if(player.attackTimer > 0){
-                player.attackTimer -= delta;
-            }
+            player.respawnTimer = Math.max(0, player.respawnTimer - delta);
 
             let beacon = null;
 
             for(const building of this.buildings){
-                if(building.team === player.team && building.type === 'respawn-beaacon' && building.health > 0){
+                if(building.team === player.team && building.type === 'respawn-beacon' && building.health > 0){
                     beacon = building;
                     break;
                 }
@@ -279,7 +326,7 @@ export class Game {
 
             if(player.respawnTimer === 0 && player.health <= 0 && beacon){
                 player.x = beacon.x;
-                player.z = beacon.z;
+                player.z = beacon.z + 4; // leave space between player and beacon
                 player.health = player.maxHealth;
                 this.message = 'player respawned at beacon!';
             }
@@ -287,13 +334,12 @@ export class Game {
         }
 
         for(const building of this.buildings){
-            const production = this.gamedata.buildItems[building.type].production;
+            const production = this.buildItems[building.type].production;
             if(production && building.health > 0){
                 building.productionTimer += delta;
-                if(building.productionTimer >= production.time){
-                    building.productionTimer = 0;
-                    this.players[building.team].Inventory.add(production.amount);
-                    this.message = 'resources produced!';
+                while(building.productionTimer >= production.seconds){
+                    building.productionTimer -= production.seconds;
+                    this.players[building.team].Inventory.add(production.iridium);
                 }
             }
         }
@@ -312,21 +358,16 @@ export class Game {
             if(distance > 2){
                 const directionX = nearest.x - soldier.x;
                 const directionZ = nearest.z - soldier.z;
-                const length = Math.hypot(directionX, directionZ);
-                soldier.x += (directionX / length) * delta * 2;
-                soldier.z += (directionZ / length) * delta * 2;
+                const step = Math.min(delta * 2, distance - 2);
+                soldier.x += (directionX / distance) * step;
+                soldier.z += (directionZ / distance) * step;
             } else if(soldier.attackTimer <= 0){
-                nearest.health -= 10;
+                this.damage(nearest, 10);
                 soldier.attackTimer = 1;
                 this.message = 'soldier attacked!';
             }
-
-
-
         }
 
-
+        this.removeDestroyed();
     }
-
-
 }
