@@ -30,9 +30,8 @@ import { objectGroup } from 'three/tsl';
         LOCAL VARIABLES
 //---------------------------*/
 
-const lilgui = new GUI();
-
 const modelLoader = new GLTFLoader();
+
 const textureLoader = new THREE.TextureLoader();
 const groundTexturePath = './assets/callisto-ground.png';
 const groundTextureRepeat = 20;
@@ -152,26 +151,10 @@ gameObjects.push(groundPlane);
 
 // Lighting
 
-class ColorGUIHelper {
-  constructor(object, prop) {
-    this.object = object;
-    this.prop = prop;
-  }
-  get value() {
-    return '#' + this.object[this.prop].getHexString();
-  }
-  set value(hexString) {
-    this.object[this.prop].set(hexString);
-  }
-}
-
 const color = 0xFFFFFF;
 const intensity = 4;
 const light = new THREE.AmbientLight(color, intensity);
 scene.add(light)
-
-lilgui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
-lilgui.add(light, 'intensity', 0, 5, 0.01);
 
 // Placeable asset templates
 modelLoader.load('./assets/jack_pump/scene.gltf', function(gltf){
@@ -248,15 +231,16 @@ function resizeRendererToDisplaySize(renderer) {
     pCam.aspect = canvas.clientWidth / canvas.clientHeight;
     pCam.updateProjectionMatrix();
 	}
-
 }
 
 function render( time ) {
   resizeRendererToDisplaySize(mainRenderer);
   resizeRendererToDisplaySize(HTMLRenderer);
+
   const delta = animationClock.getDelta();
   gameInput.update(delta, mainCharacter, externalCamera);
   mainCharacter.update(delta, gameInput.velocity);
+  
   for (const mixer of placeableMixers) {
     mixer.update(delta);
   }

@@ -93,11 +93,8 @@ export class Input{
             this.desiredVelocity.normalize().multiplyScalar(3);
         }
 
-        const response = this.desiredVelocity.lengthSq() > 0 ? 10 : 14;
-        const smoothing = 1 - Math.exp(-response * delta);
-
         // Interpolate between current velocity and next velocity value for smoothness.
-        this.velocity.lerp(this.desiredVelocity, smoothing);
+        this.velocity.lerp(this.desiredVelocity, 0.1);
         character.character.position.addScaledVector(this.velocity, delta);
     }
 }

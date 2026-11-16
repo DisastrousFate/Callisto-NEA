@@ -1,0 +1,54 @@
+{
+  "hash": "76a459d6",
+  "configHash": "46577185",
+  "lockfileHash": "6176e8c4",
+  "browserHash": "d8e7bd6e",
+  "optimized": {
+    "three": {
+      "src": "../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "0fd391e3",
+      "needsInterop": false
+    },
+    "three/addons/controls/OrbitControls.js": {
+      "src": "../../node_modules/three/examples/jsm/controls/OrbitControls.js",
+      "file": "three_addons_controls_OrbitControls__js.js",
+      "fileHash": "e69845f6",
+      "needsInterop": false
+    },
+    "three/addons/renderers/CSS2DRenderer.js": {
+      "src": "../../node_modules/three/examples/jsm/renderers/CSS2DRenderer.js",
+      "file": "three_addons_renderers_CSS2DRenderer__js.js",
+      "fileHash": "dc0f892c",
+      "needsInterop": false
+    },
+    "three/examples/jsm/Addons.js": {
+      "src": "../../node_modules/three/examples/jsm/Addons.js",
+      "file": "three_examples_jsm_Addons__js.js",
+      "fileHash": "646652e3",
+      "needsInterop": false
+    },
+    "three/examples/jsm/libs/lil-gui.module.min.js": {
+      "src": "../../node_modules/three/examples/jsm/libs/lil-gui.module.min.js",
+      "file": "three_examples_jsm_libs_lil-gui__module__min__js.js",
+      "fileHash": "03df3840",
+      "needsInterop": false
+    },
+    "three/tsl": {
+      "src": "../../node_modules/three/build/three.tsl.js",
+      "file": "three_tsl.js",
+      "fileHash": "f67adbe3",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "three.core--5Aon5b6": {
+      "file": "three.core--5Aon5b6.js",
+      "isDynamicEntry": false
+    },
+    "three.tsl-Qqgm717_": {
+      "file": "three.tsl-Qqgm717_.js",
+      "isDynamicEntry": false
+    }
+  }
+}

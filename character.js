@@ -40,7 +40,7 @@ export class Character{
         return texture;
       };
 
-      //Combine different materials into one map for astro
+      // Combine different materials into one map for astro
 
       const materials = new Map([
         ['material_0', new THREE.MeshStandardMaterial({
@@ -57,38 +57,62 @@ export class Character{
         })],
       ]);
 
-      model.traverse((object) => {
-        if (!object.isMesh) return;
-        const material = materials.get(object.material.name);
-        if (material) object.material = material;
+      model.traverse(function (object) {
+        if (object.isMesh) {
+          const material = materials.get(object.material.name);
+          if (material) {
+            object.material = material;
+          }
+        }
       });
 
       this.character.add(model);
 
       const bounds = new THREE.Box3().setFromObject(model);
-      const size = bounds.getSize(new THREE.Vector3());
-      const modelScale = 1.8 / size.y;
-      model.scale.setScalar(modelScale);
+      const size = bounds.getSize(new THREE.Vector3()); // objects bounds
+      const modelScale = 1.8 / size.y; // 1.8 looks good!
+
+      model.scale.setScalar(modelScale); // apply in all directions
       model.position.set(
         -(bounds.min.x + bounds.max.x) * modelScale / 2,
-        -bounds.min.y * modelScale,
+        -bounds.min.y * modelScale + 0.18,
         -(bounds.min.z + bounds.max.z) * modelScale / 2
       );
 
+      // 3D animations for astro
+
       this.mixer = new THREE.AnimationMixer(model);
-      const idleClip = gltf.animations.find((clip) => clip.name.toLowerCase() === 'idle');
-      const walkClip = gltf.animations.find((clip) => clip.name.toLowerCase().includes('walk'));
+      const idleClip = gltf.animations.find(function (clip) {
+        return clip.name.toLowerCase() === 'idle';
+      });
+
+      const walkClip = gltf.animations.find(function (clip) {
+        return clip.name.toLowerCase().includes('walk');
+      });
 
       if (!walkClip) {
         console.error('Walking astronaut model does not contain a walking animation.');
         return;
       }
 
+      if (idleClip) {
+
       this.walkAction = this.mixer.clipAction(walkClip);
-      this.idleAction = idleClip ? this.mixer.clipAction(idleClip) : null;
-      this.currentAction = this.idleAction ?? this.walkAction;
+      } else {
+        this.idleAction = null;
+      }
+      
+      if (idleClip) {
+        this.idleAction = this.mixer.clipAction(idleClip);
+      } else {
+        this.idleAction = null;
+      }
+      this.currentAction = this.idleAction;
       this.currentAction.play();
-      if (!this.isMoving && !this.idleAction) this.walkAction.paused = true;
+      
+      if (!this.isMoving && !this.idleAction) {
+        this.walkAction.paused = true;
+      }
     }, undefined, (error) => {
       console.error('Failed to load the walking astronaut model.', error);
     });
@@ -113,15 +137,30 @@ export class Character{
 
     if (this.isMoving !== isMoving) {
       this.isMoving = isMoving;
-      const nextAction = isMoving ? this.walkAction : (this.idleAction ?? this.walkAction);
+
+      let nextAction;
+      if (isMoving) {
+        nextAction = this.walkAction;
+      } else if (this.idleAction) {
+        nextAction = this.idleAction;
+      } else {
+        nextAction = this.walkAction;
+      }
 
       if (nextAction !== this.currentAction) {
+        const previousAction = this.currentAction;
+
         nextAction.reset().play();
-        if (this.currentAction) this.currentAction.crossFadeTo(nextAction, 0.2, true);
+
+        if (previousAction) {
+          previousAction.crossFadeTo(nextAction, 0.2, true);
+        }
+
         this.currentAction = nextAction;
       } else if (isMoving && !this.idleAction) {
         nextAction.reset().play();
       }
+
       this.walkAction.paused = !isMoving && !this.idleAction;
     }
 
