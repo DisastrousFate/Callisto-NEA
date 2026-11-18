@@ -1,0 +1,48 @@
+{
+    "buildItems": {
+        "jack-pump": {
+            "name": "Jack Pump",
+            "cost": 25,
+            "health": 80,
+            "model": "./assets/jack_pump/scene.gltf",
+            "modelSize": 3,
+            "production": {
+                "iridium": 5,
+                "seconds": 2,
+                "nodeRange": 6
+            }
+        },
+        "respawn-beacon": {
+            "name": "Respawn Beacon",
+            "cost": 40,
+            "health": 100
+        },
+        "barracks": {
+            "name": "Barracks",
+            "cost": 35,
+            "health": 100
+        }
+    },
+    "resourceNodes": [
+        {
+            "x": -18,
+            "z": -8
+        },
+        {
+            "x": 18,
+            "z": -8
+        }
+    ],
+    "terrain": {
+        "texture": "./assets/callisto-ground.png",
+        "textureRepeat": 20
+    },
+    "skyboxFaces": [
+        "./assets/space-skybox/right.png",
+        "./assets/space-skybox/left.png",
+        "./assets/space-skybox/top.png",
+        "./assets/space-skybox/bottom.png",
+        "./assets/space-skybox/front.png",
+        "./assets/space-skybox/back.png"
+    ]
+}

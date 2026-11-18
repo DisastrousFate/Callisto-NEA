@@ -73,7 +73,7 @@ const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHe
 const mainRenderer = new THREE.WebGLRenderer({antialias: true});
 const mainCharacter = new character.Character(scene);
 
-const game = new game.Game(gameData);
+const game1 = new game.Game(gameData);
 
 const externalCamera = new character.externalCamera(scene, pCam, mainRenderer, mainCharacter);
 
