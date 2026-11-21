@@ -4,12 +4,20 @@ import * as utility from './utility.js'
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 
+let globalScene = null;
+
 export class Character{
-  constructor(scene){
+  constructor(scene, px = 0, py = 1, pz = 0, npc = false){
+    
     this.character = new THREE.Group();
-    this.character.position.set(0, 1, 0);
-    this.character.name = 'mainCharacter';
-    scene.add(this.character);
+    this.character.position.set(px, py, pz);
+    if(npc){
+      this.character.name = 'npcCharacter';
+    } else{
+      this.character.name = 'mainCharacter';
+      globalScene = scene;
+    }
+    globalScene.add(this.character);
     gameObjects.push(this.character);
 
     this.mixer = null;

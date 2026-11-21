@@ -35,7 +35,7 @@ export class HUD {
         this.buildItemButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 if (button.disabled) return;
-                this.selectedBuildItem = button.dataset.buildItem;
+                this.selectedBuildItem = button.dataset.buildItem; // access data-... in html class.
                 this.buildItemPreview.textContent = button.dataset.buildLabel;
                 this.buildPlaceButton.disabled = false;
             });

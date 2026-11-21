@@ -23,16 +23,6 @@
             "health": 100
         }
     },
-    "resourceNodes": [
-        {
-            "x": -18,
-            "z": -8
-        },
-        {
-            "x": 18,
-            "z": -8
-        }
-    ],
     "terrain": {
         "texture": "./assets/callisto-ground.png",
         "textureRepeat": 20

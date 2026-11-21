@@ -35,8 +35,21 @@ const response = await fetch('./gamedata.json');
 if (!response.ok) {
   throw new Error(`Failed to load gamedata.json: ${response.status} ${response.statusText}`);
 }
-const gameText = await response.json();
-const gameData = JSON.parse(gameText);
+const gameData = await response.json();
+
+// randomise resource nodes.
+
+gameData.resourceNodes = [];
+
+for(let i=0; i<=5; i++){
+  const randX = Math.random()*50 -50;
+  const randY = Math.random()*50 -50;
+
+  gameData.resourceNodes.push({x: Math.round(randX), z: Math.round(randY), type: 'iridium', amount: 100})
+}
+
+console.log(gameData);
+
 
 /*---------------------------//
         LOCAL VARIABLES
@@ -108,7 +121,7 @@ div_2D.appendChild(HTMLRenderer.domElement);
 
 const lower_toolbar = document.getElementById('lower-toolbar');
 
-const placeableTemplates = new Map();
+const buildTemplates = new Map();
 const placeableMixers = new Set();
 const animationClock = new THREE.Clock();
 let activePlaceable = null;
@@ -118,7 +131,7 @@ let hasPlacementPosition = false;
 
 const HUD = new hud.HUD(scene, pCam);
 HUD.setupBuildMenu((itemId) => {
-  const template = placeableTemplates.get(itemId);
+  const template = buildTemplates.get(itemId);
   if (!template || activePlaceable) return false;
 
   activePlaceable = template.scene.clone(true);
@@ -171,15 +184,53 @@ const light = new THREE.AmbientLight(color, intensity);
 scene.add(light)
 
 // Placeable asset templates
-modelLoader.load('./assets/jack_pump/scene.gltf', function(gltf){
-  placeableTemplates.set('jack-pump', {
-    scene: gltf.scene,
-    animations: gltf.animations,
-  });
-  HUD.setBuildItemAvailable('jack-pump', true);
-}, undefined, function(error){
-  console.error(error);
-});
+
+function load_builds(location, name){
+  
+  modelLoader.load(location, function(gltf){
+    buildTemplates.set(name, {
+      scene: gltf.scene,
+      animations: gltf.animations,
+    });
+      HUD.setBuildItemAvailable(name, true);
+  }
+  );
+
+}
+
+load_builds('./assets/jack_pump/scene.gltf', 'jack-pump');
+//load_builds('./assets/pbr_material_puddle/scene.gltf', 'oil-reservoir');
+
+
+for (const node of gameData.resourceNodes){
+  // const resourceNode = new THREE.Mesh(
+  //   new THREE.CylinderGeometry(0.5, 0.5, 1, 32),
+  //   new THREE.MeshStandardMaterial({color: 0x00FF00})
+  // );
+
+  modelLoader.load('./assets/pbr_material_puddle/scene.gltf', (gltf) => {
+    const resourceNode = gltf.scene;
+
+    // const textureLoader = new THREE.TextureLoader();
+    // const loadDiffuseMap = (filename) => {
+    //   const texture = textureLoader.load(
+    //     `./assets/walking_astronaut/textures/${filename}`,
+    //     undefined,
+    //     undefined,
+    //   );
+
+    //   texture.flipY = false;
+    //   texture.colorSpace = THREE.SRGBColorSpace;
+    //   return texture;
+
+    resourceNode.position.set(node.x, 0.5, node.z);
+    scene.add(resourceNode);
+    gameObjects.push(resourceNode);
+    });
+
+
+  
+}
 
 // Placement System
 
@@ -254,6 +305,7 @@ function render( time ) {
   const delta = animationClock.getDelta();
   gameInput.update(delta, mainCharacter, externalCamera);
   mainCharacter.update(delta, gameInput.velocity);
+  game1.update(delta);
   
   for (const mixer of placeableMixers) {
     mixer.update(delta);

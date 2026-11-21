@@ -1,3 +1,6 @@
+import * as character from './character.js'
+import * as THREE from 'three';
+
 /*------------INVENTORY--------------*/
 
 
@@ -32,6 +35,10 @@ export class Inventory {
 
 export class Player {
     constructor(team, x, z) {
+        if(team !== 0){ // check not NPC
+             this.character = new character.Character(null, x,1,z, true); // no scene available, is NPC
+        }
+       
         this.team = team;
         this.x = x;
         this.z = z;
@@ -76,7 +83,7 @@ export class Solider {
 export class Game {
     constructor(gameData) { 
         this.buildItems = gameData.buildItems
-
+        console.log(this.buildItems)
         this.players = [ // set 2 players
             new Player(0,-12,0),
             new Player(1,12,0)
@@ -102,8 +109,8 @@ export class Game {
 
         // -- //
 
-        this.add_building('respawn-beaacon', 0, -12, -4);
-        this.add_building('respawn-beaacon', 1, 12, -4);
+        this.add_building('respawn-beacon', 0, -12, -4);
+        this.add_building('respawn-beacon', 1, 12, -4);
 
 
         // add shit.
@@ -125,7 +132,7 @@ export class Game {
             team: team,
             x: x,
             z: z,
-            health: this.gameData.buildItems[type].health,
+            health: this.buildItems[type].health,
             productionTimer: 0
 
         }
@@ -255,6 +262,14 @@ export class Game {
             return;
         }
 
+        // update NPC animations.
+        for (const player of this.players){
+            if(player.team !== 0){
+                player.character.update(delta, new THREE.Vector3(0,0,0));
+            }
+           
+        }
+
         for(const player of this.players){
             if(player.respawnTimer > 0){
                 player.respawnTimer -= delta;
@@ -287,7 +302,7 @@ export class Game {
         }
 
         for(const building of this.buildings){
-            const production = this.gamedata.buildItems[building.type].production;
+            const production = this.buildItems[building.type].production;
             if(production && building.health > 0){
                 building.productionTimer += delta;
                 if(building.productionTimer >= production.time){
