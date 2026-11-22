@@ -1,4 +1,4 @@
-import { Fi as Object3D, Ls as Vector2, Rs as Vector3, Xr as Matrix4 } from "./three.core--5Aon5b6.js";
+import { Hi as Object3D, Hs as Vector2, Us as Vector3, ri as Matrix4 } from "./three.module-DFtsUDDU.js";
 // node_modules/three/examples/jsm/renderers/CSS2DRenderer.js
 /**
 * The only type of 3D object that is supported by {@link CSS2DRenderer}.

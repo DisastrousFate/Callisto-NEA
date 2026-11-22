@@ -1,4 +1,4 @@
-import { Ls as Vector2, Ro as Spherical, Rs as Vector3, Ur as MOUSE, Zi as Plane, da as Quaternion, dt as Controls, io as Ray, is as TOUCH, qr as MathUtils } from "./three.core--5Aon5b6.js";
+import { Hs as Vector2, Uo as Spherical, Us as Vector3, Xr as MOUSE, ei as MathUtils, ia as Plane, ls as TOUCH, uo as Ray, va as Quaternion, vt as Controls } from "./three.module-DFtsUDDU.js";
 // node_modules/three/examples/jsm/controls/OrbitControls.js
 /**
 * Fires when the camera has been transformed by the controls.

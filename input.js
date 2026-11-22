@@ -1,11 +1,12 @@
-import { NoToneMapping } from 'three';
 import * as THREE from 'three';
-import * as utility from './utility.js'
-import {externalCamera} from './character.js'
-import { ThreeMFLoader } from 'three/examples/jsm/Addons.js';
 
+/*---------------------------//
+       KEYBOARD INPUT
+//---------------------------*/
+
+// Earlier movement attempt
 // function movePlayer(key){
-    
+
 //     let moveObject = utility.findMesh('mainCharacter')
 //     if (moveObject) {
 //         // object exists, begin command execution...
@@ -23,17 +24,18 @@ import { ThreeMFLoader } from 'three/examples/jsm/Addons.js';
 //         if(key == 'd'){
 //             //moveObject.position.x += 0.1;
 //         }
-        
+
 
 //     }
 // }
 
-
-
 export class Input{
     constructor(canvas, character, camera){
         this.previewPlacement_b = false;
-        this.onPlacementConfirm = () => false;
+        // main.js supplies these actions after the input object has been created.
+        this.onPlacementConfirm = function() { return false; };
+        this.onPlacementCancel = function() {};
+        this.onAttack = function() {};
         this.keys = new Set();
         this.velocity = new THREE.Vector3();
         this.forward = new THREE.Vector3();
@@ -41,14 +43,7 @@ export class Input{
         this.up = new THREE.Vector3(0, 1, 0);
         this.desiredVelocity = new THREE.Vector3();
 
-        canvas.addEventListener('focus', () => {
-            // Complete focus on screen.
-        });
-        
-        canvas.addEventListener('blur', () => {
-            // No focus, go to ingame menu
-        });
-
+        // Ignore game keys when typing into a text box.
         window.addEventListener('keydown', (key) => {
             if (key.target instanceof HTMLElement &&
                 (key.target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(key.target.tagName))) {
@@ -58,6 +53,10 @@ export class Input{
             const pressedKey = key.key.toLowerCase();
             if (['w', 'a', 's', 'd'].includes(pressedKey)) {
                 this.keys.add(pressedKey);
+            } else if (pressedKey === 'escape') {
+                this.onPlacementCancel();
+            } else if (pressedKey === 'f' && !key.repeat) {
+                this.onAttack();
             } else if (pressedKey === 'e' && !key.repeat) {
                 if (this.previewPlacement_b && this.onPlacementConfirm()) {
                     this.previewPlacement_b = false;
@@ -69,14 +68,20 @@ export class Input{
             this.keys.delete(key.key.toLowerCase());
         });
 
+        // Releasing focus must stop movement, or a held key could get stuck.
         window.addEventListener('blur', () => {
             this.keys.clear();
             this.velocity.set(0, 0, 0);
         });
     }
 
+    /*---------------------------//
+          PLAYER MOVEMENT
+    //---------------------------*/
+
     update(delta, character, camera){
         camera.camera.getWorldDirection(this.forward);
+        // Ignore the camera looking up/down - the player should move along the floor.
         this.forward.y = 0;
         this.forward.normalize();
         this.right.crossVectors(this.forward, this.up).normalize();
@@ -90,6 +95,7 @@ export class Input{
         if (this.keys.has('a')) this.desiredVelocity.sub(this.right);
 
         if (this.desiredVelocity.lengthSq() > 0) {
+            // Diagonal movement should not be faster than moving in one direction.
             this.desiredVelocity.normalize().multiplyScalar(3);
         }
 

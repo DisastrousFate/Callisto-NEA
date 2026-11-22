@@ -195,7 +195,7 @@ export class Game {
             return false;
         }
         
-        const armySize = 0;
+        let armySize = 0;
         for(const soldier of this.soldiers){
             if(soldier.team === this.activeTeam){
                 armySize++;

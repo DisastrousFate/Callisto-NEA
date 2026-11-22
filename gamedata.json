@@ -23,6 +23,16 @@
             "health": 100
         }
     },
+    "resourceNodes": [
+        {
+            "x": -18,
+            "z": -8
+        },
+        {
+            "x": 18,
+            "z": -8
+        }
+    ],
     "terrain": {
         "texture": "./assets/callisto-ground.png",
         "textureRepeat": 20
@@ -34,5 +44,13 @@
         "./assets/space-skybox/bottom.png",
         "./assets/space-skybox/front.png",
         "./assets/space-skybox/back.png"
-    ]
+    ],
+    "astronaut": {
+        "model": "./assets/walking_astronaut/scene.gltf",
+        "height": 1.8,
+        "textures": {
+            "material_0": "./assets/walking_astronaut/textures/material_0_diffuse.png",
+            "material_2": "./assets/walking_astronaut/textures/material_2_diffuse.png"
+        }
+    }
 }
