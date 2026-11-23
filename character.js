@@ -223,7 +223,8 @@ export class externalCamera{
     this.controls.update();
 
   }
-
+ 
+  
   animate(){
 
     // follow player
