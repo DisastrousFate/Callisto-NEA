@@ -4,7 +4,7 @@ import * as THREE from 'three';
        KEYBOARD INPUT
 //---------------------------*/
 
-// Earlier movement attempt
+// early movement
 // function movePlayer(key){
 
 //     let moveObject = utility.findMesh('mainCharacter')
@@ -31,47 +31,47 @@ import * as THREE from 'three';
 
 export class Input{
     constructor(canvas, character, camera){
-        this.previewPlacement_b = false;
-        // main.js supplies these actions after the input object has been created.
-        this.onPlacementConfirm = function() { return false; };
+        this.previewPlacement_b = false; // preview off
+        // input callbacks
+        this.onPlacementConfirm = function() { return false; }; // wait for the real handler
         this.onPlacementCancel = function() {};
         this.onAttack = function() {};
-        this.keys = new Set();
-        this.velocity = new THREE.Vector3();
+        this.keys = new Set(); // held keys
+        this.velocity = new THREE.Vector3(); // current speed
         this.forward = new THREE.Vector3();
         this.right = new THREE.Vector3();
         this.up = new THREE.Vector3(0, 1, 0);
-        this.desiredVelocity = new THREE.Vector3();
+        this.desiredVelocity = new THREE.Vector3(); // target velocity
 
-        // Ignore game keys when typing into a text box.
+        // leave text fields alone
         window.addEventListener('keydown', (key) => {
             if (key.target instanceof HTMLElement &&
                 (key.target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(key.target.tagName))) {
                 return;
             }
 
-            const pressedKey = key.key.toLowerCase();
+            const pressedKey = key.key.toLowerCase(); // normalise key
             if (['w', 'a', 's', 'd'].includes(pressedKey)) {
-                this.keys.add(pressedKey);
+                this.keys.add(pressedKey); // track movement
             } else if (pressedKey === 'escape') {
-                this.onPlacementCancel();
-            } else if (pressedKey === 'f' && !key.repeat) {
+                this.onPlacementCancel(); // cancel preview
+            } else if (pressedKey === 'f' && !key.repeat) { // single attack
                 this.onAttack();
-            } else if (pressedKey === 'e' && !key.repeat) {
+            } else if (pressedKey === 'e' && !key.repeat) { // single confirm
                 if (this.previewPlacement_b && this.onPlacementConfirm()) {
-                    this.previewPlacement_b = false;
+                    this.previewPlacement_b = false; // preview done
                 }
             }
         });
 
         window.addEventListener('keyup', (key) => {
-            this.keys.delete(key.key.toLowerCase());
+            this.keys.delete(key.key.toLowerCase()); // key released
         });
 
-        // Releasing focus must stop movement, or a held key could get stuck.
+        // clear keys when focus is lost
         window.addEventListener('blur', () => {
             this.keys.clear();
-            this.velocity.set(0, 0, 0);
+            this.velocity.set(0, 0, 0); // stop movement
         });
     }
 
@@ -79,28 +79,29 @@ export class Input{
           PLAYER MOVEMENT
     //---------------------------*/
 
-    update(delta, character, camera){
-        camera.camera.getWorldDirection(this.forward);
-        // Ignore the camera looking up/down - the player should move along the floor.
+    // - turn held keys into movement relative to the camera
+    update(delta, position, camera){
+        camera.camera.getWorldDirection(this.forward); // camera forward
+        // ground movement
         this.forward.y = 0;
-        this.forward.normalize();
-        this.right.crossVectors(this.forward, this.up).normalize();
+        this.forward.normalize(); // unit direction
+        this.right.crossVectors(this.forward, this.up).normalize(); // right angle to camera forward
 
-        // Add movement velocity on button input, resulting in smooth calculated movement.
+        // held keys
 
-        this.desiredVelocity.set(0, 0, 0);
+        this.desiredVelocity.set(0, 0, 0); // reset target
         if (this.keys.has('w')) this.desiredVelocity.add(this.forward);
         if (this.keys.has('s')) this.desiredVelocity.sub(this.forward);
         if (this.keys.has('d')) this.desiredVelocity.add(this.right);
         if (this.keys.has('a')) this.desiredVelocity.sub(this.right);
 
-        if (this.desiredVelocity.lengthSq() > 0) {
-            // Diagonal movement should not be faster than moving in one direction.
+        if (this.desiredVelocity.lengthSq() > 0) { // has movement
+            // keep diagonals from moving faster
             this.desiredVelocity.normalize().multiplyScalar(3);
         }
 
-        // Interpolate between current velocity and next velocity value for smoothness.
+        // smooth movement
         this.velocity.lerp(this.desiredVelocity, 0.1);
-        character.character.position.addScaledVector(this.velocity, delta);
+        position.addScaledVector(this.velocity, delta); // frame displacement
     }
 }

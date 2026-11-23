@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    cacheDir: '.vite-cache',
+    cacheDir: '.vite-cache', // dependency cache
 });

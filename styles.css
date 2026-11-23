@@ -220,7 +220,7 @@ h1 {
     z-index: 100;
     display:block;
 } */
-/* Live game information uses the same plain grey style as the build menu. */
+/* menu colours */
 body { margin: 0; font-family: Arial, sans-serif; }
 #game-panel {
     position: absolute; top: 12px; left: 12px; z-index: 100;

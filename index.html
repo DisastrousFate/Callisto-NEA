@@ -14,11 +14,11 @@
   </head>
   <body>
 
-    <!-- Display the main 3D elements-->
+    <!-- game view -->
   
     <div class = 'main-screen'></div>
 
-    <!-- Display the 2D elements-->
+    <!-- menus -->
 
     <div id = 'HTML'>
       
@@ -26,11 +26,10 @@
         <p id="game-status"></p>
         <progress id="health-bar" max="100" value="100" aria-label="Player health"></progress>
         <p id="game-message" role="status"></p>
-        <details><summary>Controls and building costs</summary><p>WASD: move · Drag: orbit · Scroll: zoom · E: place · Escape: cancel · F: attack</p>
-        <p id="building-costs"></p></details>
+        <details><summary>Controls</summary><p>WASD: move · Drag: orbit · Scroll: zoom · E: place · Escape: cancel · F: attack</p>
+        <p>Place jack pumps near oil puddles to produce iridium.</p></details>
         <button id="attack-button" type="button">Attack nearest enemy</button>
         <button id="train-soldier" type="button">Train soldier</button>
-        <button id="recycle-button" type="button">Recycle nearby building</button>
         <button id="switch-team" type="button">Switch local team</button>
       </div>
       <div id="inventory-menu-div" class="is-hidden">

@@ -2,6 +2,7 @@
        HUD AND MENUS
 //---------------------------*/
 
+import { buildItems } from './game.js';
 import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 
@@ -16,54 +17,46 @@ export class HUD {
              BUILD MENU
     //---------------------------*/
 
-    setupBuildMenu(buildItems, onPlace){
+    setupBuildMenu(onPlace){ // placement callback
         this.buildMenu = document.getElementById('build-menu-div');
         this.buildMenuButton = document.getElementById('lower-menu-button');
-        this.buildItemPreview = this.buildMenu?.querySelector('.build-item-preview'); // ? avoids undefined errors.
+        this.buildItemPreview = this.buildMenu?.querySelector('.build-item-preview'); // optional menu
         this.buildPlaceButton = this.buildMenu?.querySelector('.build-place-button');
         this.buildItemButtons = [];
         if (this.buildMenu) {
-            const buttons = this.buildMenu.querySelectorAll('[data-build-item]');
+            const buttons = this.buildMenu.querySelectorAll('[data-build-item]'); // item buttons
             for (let index = 0; index < buttons.length; index++) {
                 this.buildItemButtons.push(buttons[index]);
             }
         }
 
-        if (!this.buildMenu || !this.buildMenuButton || !this.buildItemPreview ||
+        if (!this.buildMenu || !this.buildMenuButton || !this.buildItemPreview || // required controls
             !this.buildPlaceButton || this.buildItemButtons.length === 0){
             throw new Error('Build menu markup is missing required elements.');
         }
 
-        this.selectedBuildItem = null;
+        this.selectedBuildItem = null; // no selection
 
-        this.buildMenuButton.addEventListener('click', () => {
+        this.buildMenuButton.addEventListener('click', () => { // toggle build
             this.buildMenu.classList.toggle('is-hidden');
-            this.inventoryMenu?.classList.add('is-hidden');
+            this.inventoryMenu?.classList.add('is-hidden'); // hide inventory
         });
 
-        // Match each button's item ID to the name and price in the JSON file.
-        for (const button of this.buildItemButtons) {
-            const item = buildItems[button.dataset.buildItem];
+        // item details
+        this.buildItemButtons.forEach((button) => {
+            const item = buildItems[button.dataset.buildItem]; // use the id from the button
             button.textContent = item.name;
             button.addEventListener('click', () => {
-                if (button.disabled) return;
+                if (button.disabled) return; // locked item
                 this.selectedBuildItem = button.dataset.buildItem;
-                this.buildItemPreview.textContent = item.name + ' — ' + item.cost + ' iridium';
-                this.buildPlaceButton.disabled = false;
+                this.buildItemPreview.textContent = item.name + ' — ' + item.cost + ' iridium'; // price preview
+                this.buildPlaceButton.disabled = false; // enable placement
             });
-        }
-
-        const pump = buildItems['jack-pump'];
-        const beacon = buildItems['respawn-beacon'];
-        const barracks = buildItems['barracks'];
-        document.getElementById('building-costs').textContent =
-            pump.name + ': ' + pump.cost + ' iridium, produces ' + pump.production.iridium +
-            ' every ' + pump.production.seconds + 's near oil puddles. ' +
-            beacon.name + ': ' + beacon.cost + '. ' + barracks.name + ': ' + barracks.cost + '. Soldier: 20.';
+        });
 
         this.buildPlaceButton.addEventListener('click', () => {
-            if (!this.selectedBuildItem || onPlace(this.selectedBuildItem) === false) return;
-            this.buildMenu.classList.add('is-hidden');
+            if (!this.selectedBuildItem || onPlace(this.selectedBuildItem) === false) return; // start preview if an item is selected
+            this.buildMenu.classList.add('is-hidden'); // hide menu
         });
     }
 
@@ -71,19 +64,18 @@ export class HUD {
          OTHER MENU BUTTONS
     //---------------------------*/
 
-    // These buttons call the rules in game.js. The HUD only displays the result.
+    // button actions
     setupGameMenus(game, onSwitch){
         this.inventoryMenu = document.getElementById('inventory-menu-div');
-        document.getElementById('inventory-menu-button').addEventListener('click', () => {
+        document.getElementById('inventory-menu-button').addEventListener('click', () => { // toggle inventory
             this.inventoryMenu.classList.toggle('is-hidden');
-            this.buildMenu.classList.add('is-hidden');
+            this.buildMenu.classList.add('is-hidden'); // hide build
         });
         document.getElementById('close-inventory').addEventListener('click', () => this.inventoryMenu.classList.add('is-hidden'));
         document.getElementById('close-build').addEventListener('click', () => this.buildMenu.classList.add('is-hidden'));
         document.getElementById('train-soldier').addEventListener('click', function() { game.trainSoldier(); });
         document.getElementById('attack-button').addEventListener('click', function() { game.attack(); });
-        document.getElementById('recycle-button').addEventListener('click', function() { game.recycleBuilding(); });
-        document.getElementById('switch-team').addEventListener('click', onSwitch);
+        document.getElementById('switch-team').addEventListener('click', onSwitch); // switch callback
         this.status = document.getElementById('game-status');
         this.message = document.getElementById('game-message');
         this.inventoryContents = document.getElementById('inventory-contents');
@@ -94,62 +86,45 @@ export class HUD {
            HEALTH AND INVENTORY
     //---------------------------*/
 
-    // HUD notes:
-    // Need the current team's totals, not both teams added together.
-    // It is only displaying the inventory; spending happens in game.js.
+    // active team
     updateGame(game){
         const player = game.player;
         let name = 'Blue';
-        if (player.team === 1) name = 'Red';
+        if (player.team === 1) name = 'Red'; // red label
 
-        // Count the team's objects once, instead of filtering the list for each label.
-        // Start these again each update, otherwise they would keep counting upwards.
         let soldiers = 0;
-        let pumps = 0;
-        let barracks = 0;
-        let beacons = 0;
         for (const soldier of game.soldiers) {
-            if (soldier.team === player.team) soldiers++;
+            if (soldier.team === player.team) soldiers++; // count allies
         }
-        for (const building of game.buildings) {
-            if (building.team !== player.team) continue;
-            if (building.type === 'jack-pump') pumps++;
-            if (building.type === 'barracks') barracks++;
-            if (building.type === 'respawn-beacon') beacons++;
-        }
-
-        // Build the text in parts here so it is easier to see which value goes where.
+        // status text
         let status = name + ' team | Health ' + player.health + '/100';
-        status += ' | Iridium ' + player.inventory.iridium;
-        status += ' | Soldiers ' + soldiers + '/12';
-        status += ' | Enemy health ' + game.players[1 - player.team].health + '/100';
+        status += ' | Iridium ' + player.Inventory.iridium;
+        status += ' | Soldiers ' + soldiers + '/5';
+        status += ' | Enemy health ' + game.players[1 - player.team].health + '/100'; // opposing health
         if (player.health === 0) {
-            if (beacons > 0) {
-                status += ' | Respawning in ' + Math.ceil(player.respawnTimer) + 's';
+            if (game.buildings.some(building => building.team === player.team && building.type === 'respawn-beacon' && building.health > 0)) { // surviving beacon
+                status += ' | Respawning in ' + Math.ceil(player.respawnTimer) + 's'; // round up the seconds left
             } else {
                 status += ' | No respawn beacon — switch teams or reload to restart';
             }
         }
 
-        let inventory = name + ' inventory: ' + player.inventory.iridium + ' iridium.';
-        inventory += ' Pumps: ' + pumps + '. Barracks: ' + barracks;
-        inventory += '. Respawn beacons: ' + beacons + '.';
-
-        // Only replace text when a value changes, rather than on every frame.
+        let inventory = name + ' inventory: ' + player.Inventory.iridium + ' iridium.'; // team balance
+        // only change text when needed
         if (this.status.textContent !== status) this.status.textContent = status;
         if (this.message.textContent !== game.message) this.message.textContent = game.message;
         if (this.inventoryContents.textContent !== inventory) this.inventoryContents.textContent = inventory;
-        this.healthBar.value = player.health;
+        this.healthBar.value = player.health; // health meter
     }
 
     setBuildItemAvailable(itemId, available){
-        const button = this.buildItemButtons.find((item) => item.dataset.buildItem === itemId);
+        const button = this.buildItemButtons.find((item) => item.dataset.buildItem === itemId); // button lookup
 
         if (!button) {
             throw new Error(`Unknown build item: ${itemId}`);
         }
 
-        button.disabled = !available;
+        button.disabled = !available; // toggle availability
     }
 
 
@@ -157,8 +132,7 @@ export class HUD {
 
 }
 
-// Earlier HUD cube test, kept here for reference.
-// Cube rendered to camera to render as 2D
+// cube test
 // const geometry2d = new THREE.BoxGeometry(1, 1, 1);
 // const material2d = new THREE.MeshBasicMaterial({ color: 'white' });
 // const cube2d = new THREE.Mesh(geometry2d, material2d);

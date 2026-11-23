@@ -1,197 +1,185 @@
+
 /*---------------------------//
       IMPORTED LIBRARIES
 //---------------------------*/
 
 import * as THREE from 'three';
 import { CSS2DRenderer} from 'three/addons/renderers/CSS2DRenderer.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 
-
-/*---------------------------//
-  SHARED VARIABLE DEFINITIONS
-//---------------------------*/
 
 const gameObjects = [];
-export {gameObjects};
-
-/*---------------------------//
-           MODULES
-//---------------------------*/
+export {gameObjects}; // shared objects
 
 import * as hud from './hud.js';
 import * as character from './character.js';
 import * as input from './input.js';
-import { Game } from './game.js';
-
-/*---------------------------//
-        LOAD THE ASSET FILE
-//---------------------------*/
-
-const response = await fetch('./gamedata.json');
-if (!response.ok) {
-  throw new Error('Could not load gamedata.json. HTTP status: ' + response.status);
-}
-const assetData = await response.json();
-
-// Each team has a starting deposit. Scatter six more across the map.
-for (let i = 0; i < 6; i++) {
-  const x = Math.round(Math.random() * 90 - 45);
-  const z = Math.round(Math.random() * 90 - 45);
-  assetData.resourceNodes.push({ x: x, z: z });
-}
-const buildItems = assetData.buildItems;
+import * as game from './game.js';
 
 /*---------------------------//
         LOCAL VARIABLES
 //---------------------------*/
-
-const modelLoader = new GLTFLoader();
+          
+const modelLoader = new GLTFLoader(); // construct loaders
 const textureLoader = new THREE.TextureLoader();
-const groundTexturePath = assetData.terrain.texture;
-const groundTextureRepeat = assetData.terrain.textureRepeat;
-const groundPlaneTexture = textureLoader.load(groundTexturePath);
-groundPlaneTexture.colorSpace = THREE.SRGBColorSpace;
+
+const groundTexturePath = './assets/callisto-ground.png';
+const groundTextureRepeat = 20; // tile count
+const groundPlaneTexture = textureLoader.load(groundTexturePath); // load terrain
+
+groundPlaneTexture.colorSpace = THREE.SRGBColorSpace; // colour space
 groundPlaneTexture.wrapS = THREE.RepeatWrapping;
 groundPlaneTexture.wrapT = THREE.RepeatWrapping;
-groundPlaneTexture.repeat.set(groundTextureRepeat, groundTextureRepeat)
+
+groundPlaneTexture.repeat.set(groundTextureRepeat, groundTextureRepeat); // tile axes
 
 const scene = new THREE.Scene();
-scene.background = new THREE.CubeTextureLoader().load(
-  assetData.skyboxFaces,
+
+const skyboxFaces = [
+  "./assets/space-skybox/right.png",
+  "./assets/space-skybox/left.png",
+  "./assets/space-skybox/top.png",
+  "./assets/space-skybox/bottom.png",
+  "./assets/space-skybox/front.png",
+  "./assets/space-skybox/back.png"
+];
+
+scene.background = new THREE.CubeTextureLoader().load( // skybox faces
+  skyboxFaces,
   undefined,
   undefined,
-  function(error) { console.error('Failed to load cubemap skybox images.', error); }
+  (error) => console.error('Failed to load cubemap skybox images.', error)
 );
 
 scene.background.colorSpace = THREE.SRGBColorSpace;
+
+// setups
+
 const pCam = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 1000 );
-const mainRenderer = new THREE.WebGLRenderer({antialias: true});
-// Move the player around the map while the astronaut loads at the origin.
-const playerRoot = new THREE.Group();
-scene.add(playerRoot);
-const mainCharacter = new character.Character(scene, 0, 0, 0);
+const mainRenderer = new THREE.WebGLRenderer({antialias: true}); // smooth edges
+const mainCharacter = new character.Character(scene);
+const game1 = new game.Game(undefined, character.Character); // default rules
+const buildItems = game1.buildItems;
 
-// Orbit around the middle of the 1.8-unit astronaut.
-const cameraTarget = new THREE.Object3D();
-cameraTarget.position.y = 1.08;
-playerRoot.add(cameraTarget);
+// extra deposits
+for (let i = 0; i < 6; i++) { // scatter deposits
+  const x = Math.round(Math.random() * 90 - 45); // map bounds
+  const z = Math.round(Math.random() * 90 - 45);
+  game1.resourceNodes.push({ x: x, z: z, type: 'iridium', amount: 100 });
+}
 
-
-const game = new Game(assetData);
-playerRoot.position.set(game.player.x, 0, game.player.z); // set directly on plane
+game1.players[0].character = mainCharacter; // link character
+mainCharacter.character.position.x = game1.player.x; // set positions
+mainCharacter.character.position.z = game1.player.z;
+const idleVelocity = new THREE.Vector3(); // 0,0,0
 const teamColors = [0x4b9bff, 0xf06464]; // blue, red
 
 
-// game.buildings = its team, health, position
-// buildingMeshes = 3d mesh drawn
+// building data
+// building visuals
 
-const buildingMeshes = new Map();
-const soldierMeshes = new Map();
-let activeItemId = null;
+const buildingMeshes = new Map(); // index, value
+let activeItemId = null; // selected id
 
 //---------------------------//
 
-const externalCamera = new character.externalCamera(scene, pCam, mainRenderer, { character: cameraTarget });
+const externalCamera = new character.externalCamera(scene, pCam, mainRenderer, mainCharacter); // orbit camera
 
 //const orbitControls = new character.Camera(scene, pCam, mainRenderer, mainCharacter);
 const canvas = mainRenderer.domElement;
-canvas.setAttribute('tabindex', 0);
-const gameInput = new input.Input(canvas, mainCharacter, externalCamera);
+canvas.setAttribute('tabindex', 0); // allow focus
+const gameInput = new input.Input(canvas, mainCharacter, externalCamera); // input setup
 
 /*---------------------------//
     RENDERER INITIALISATION
 //---------------------------*/
 
-const div_2D = document.getElementById('HTML');
+const div_2D = document.getElementById('HTML'); // html overlay
 const div_mainScreen = document.getElementsByClassName('main-screen')[0];
 
 mainRenderer.setSize(window.innerWidth, window.innerHeight);
-mainRenderer.setAnimationLoop(render);
-mainRenderer.setPixelRatio(window.devicePixelRatio);
+mainRenderer.setAnimationLoop(render); // frame callback
+mainRenderer.setPixelRatio(window.devicePixelRatio); // pixel density
 
-div_mainScreen.appendChild(mainRenderer.domElement);
+div_mainScreen.appendChild(mainRenderer.domElement); // mount canvas
 
-// HTML Renderer Lower Toolbar
-const HTMLRenderer = new CSS2DRenderer();
+// overlay renderer
+const HTMLRenderer = new CSS2DRenderer(); // draw overlay
 HTMLRenderer.setSize(window.innerWidth, window.innerHeight);
 HTMLRenderer.domElement.style.position = 'absolute';
 HTMLRenderer.domElement.style.top = '0';
 HTMLRenderer.domElement.style.left = '0';
-HTMLRenderer.domElement.style.pointerEvents = 'none';
+HTMLRenderer.domElement.style.pointerEvents = 'none'; // let clicks reach the canvas
 
-// 2D/HTML elements
+// attach overlay
 div_2D.appendChild(HTMLRenderer.domElement);
 
 const lower_toolbar = document.getElementById('lower-toolbar');
 
-const build_templates = new Map();
+const buildTemplates = new Map(); // build templates
 
-const placeableMixers = new Set();
-const animationClock = new THREE.Clock();
+const placeableMixers = new Set(); // build anims
+const animationClock = new THREE.Clock(); // frame timer
 let activePlaceable = null;
-let hasPlacementPosition = false;
+let hasPlacementPosition = false; // valid spot
 
 /*---------------------------//
     BUILD MENU AND INPUT
 //---------------------------*/
 
 
-// The menu starts the preview. E confirms it after the pointer finds the ground.
 const HUD = new hud.HUD(scene, pCam);
-HUD.setupBuildMenu(buildItems, function startPlacement(itemId) {
-  const template = build_templates.get(itemId);
-  if (!template || activePlaceable || game.player.health <= 0) return false;
+
+// start preview
+HUD.setupBuildMenu(function startPlacement(itemId) { // register for later clicks
+  const template = buildTemplates.get(itemId); // selected build
+  if (!template || activePlaceable || game1.player.health <= 0) return false; // block dead players or duplicate previews
   activeItemId = itemId;
 
-  if (template.scene) {
-    activePlaceable = template.scene.clone(true);
-  } else {
-    activePlaceable = makeBuilding(itemId, game.activeTeam);
-  }
-  // Hide it until the raycast has found somewhere to put it.
-  // Otherwise it briefly appears at (0,0,0).
+  // preview mesh
+  activePlaceable = template.scene ? template.scene.clone(true) : makeBuilding(itemId, game1.activeTeam);
+  // hide preview
 
-  //---------------------------//
+  // preview anims
 
-  activePlaceable.visible = false;
+  activePlaceable.visible = false; // hide initially
   hasPlacementPosition = false;
-  if (template.animations.length > 0) {
-    const mixer = new THREE.AnimationMixer(activePlaceable);
+  if (template.animations.length > 0) { // check availability
+    const mixer = new THREE.AnimationMixer(activePlaceable); // attach animations to this copy
     for (const clip of template.animations) {
-      mixer.clipAction(clip).play();
+      mixer.clipAction(clip).play(); // play clip
     }
-    placeableMixers.add(mixer);
+    placeableMixers.add(mixer); // track mixer
   }
   scene.add(activePlaceable);
-  gameInput.previewPlacement_b = true;
+  gameInput.previewPlacement_b = true; // enable placement
   return true;
 });
 
 
-gameInput.onPlacementConfirm = function() {
-  if (!activePlaceable || !hasPlacementPosition) return false;
+gameInput.onPlacementConfirm = function() { // confirm callback
+  if (!activePlaceable || !hasPlacementPosition) return false; // require position
 
-  if (!game.placeBuilding(activeItemId, activePlaceable.position.x, activePlaceable.position.z)) return false;
-  // placeBuilding just added the record, so the last one belongs to this preview.
-  const building = game.buildings[game.buildings.length - 1];
-  buildingMeshes.set(building.id, activePlaceable);
-  // Preview becomes the real placed object here.
-  // Do not remove it from the scene - just stop treating it as a preview.
+  if (!game1.placeBuilding(activeItemId, activePlaceable.position.x, activePlaceable.position.z)) return false; // check and charge for placement
+  // newest building
+  const building = game1.buildings[game1.buildings.length - 1];
+  buildingMeshes.set(building.id, activePlaceable); // save mesh
+  // reuse preview
   gameObjects.push(activePlaceable);
-  activePlaceable = null;
+  activePlaceable = null; // clear preview
   activeItemId = null;
   hasPlacementPosition = false;
   return true;
 };
 gameInput.onPlacementCancel = cancelPlacement;
-gameInput.onAttack = function() { game.attack(); };
-HUD.setupGameMenus(game, function switchTeam() {
-  cancelPlacement();
-  // Only two teams for now, so 1 - 0 gives 1 and 1 - 1 gives 0.
-  game.activeTeam = 1 - game.activeTeam;
-  game.message = (game.activeTeam === 0 ? 'Blue' : 'Red') + ' team selected.';
-  playerRoot.position.set(game.player.x, 0, game.player.z);
-  // Clear held movement, so switching teams does not slide the other player around.
+gameInput.onAttack = function() { game1.attack(); }; // attack callback
+HUD.setupGameMenus(game1, function switchTeam() { // switch callback
+  cancelPlacement(); // cancel first
+  // swap teams
+  game1.activeTeam = 1 - game1.activeTeam;
+  game1.message = (game1.activeTeam === 0 ? 'Blue' : 'Red') + ' team selected.';
+  externalCamera.character = game1.player.character; // follow the other player
+  // clear movement
   gameInput.keys.clear();
   gameInput.velocity.set(0, 0, 0);
 });
@@ -203,7 +191,7 @@ scene.add(pCam);
         MISC GEOMETRY
 //---------------------------*/
 
-// Plane
+// ground plane
 const groundPlane = new THREE.Mesh(
   new THREE.PlaneGeometry(100,100),
   new THREE.MeshPhongMaterial({
@@ -211,85 +199,89 @@ const groundPlane = new THREE.Mesh(
     side: THREE.DoubleSide,
   })
 )
-groundPlane.rotateX(Math.PI/2)
+groundPlane.rotateX(Math.PI/2) // flatten plane
 scene.add(groundPlane);
 gameObjects.push(groundPlane);
 
-// Lighting
+// lighting
 
 const color = 0xFFFFFF;
 const intensity = 4;
-const light = new THREE.AmbientLight(color, intensity);
+const light = new THREE.AmbientLight(color, intensity); // global light
 scene.add(light)
 
 /*---------------------------//
   LOADING BUILDING MODELS
 //---------------------------*/
 
-// Load each model once. Items without a model use the simple shapes below.
-for (const itemId of Object.keys(buildItems)) {
-  const item = buildItems[itemId];
-  if (!item.model) {
-    build_templates.set(itemId, { scene: null, animations: [] });
-    HUD.setBuildItemAvailable(itemId, true);
-    continue;
-  }
-
-  modelLoader.load(item.model, function(gltf){
-    // Scale the longest side to the size in gamedata.json.
+function load_builds(location, name){
+  const item = buildItems[name];
+  modelLoader.load(location, function(gltf){ // load callback
+    // fit model
     const bounds = new THREE.Box3().setFromObject(gltf.scene);
     const size = bounds.getSize(new THREE.Vector3());
-    const scale = item.modelSize / Math.max(size.x, size.y, size.z);
+    const scale = item.modelSize / Math.max(size.x, size.y, size.z); // scale to the longest side
     gltf.scene.scale.setScalar(scale);
-    gltf.scene.position.set(
-      -(bounds.min.x + bounds.max.x) * scale / 2,
-      -bounds.min.y * scale,
-      -(bounds.min.z + bounds.max.z) * scale / 2
+    gltf.scene.position.set( // align model
+      -(bounds.min.x + bounds.max.x) * scale / 2, // centre x
+      -bounds.min.y * scale, // rest the model on the ground
+      -(bounds.min.z + bounds.max.z) * scale / 2 // centre z
     );
 
-    // Move the whole group when placing it, keeping the animation inside.
+    // group model
     const model = new THREE.Group();
     model.add(gltf.scene);
-    build_templates.set(itemId, { scene: model, animations: gltf.animations });
-    HUD.setBuildItemAvailable(itemId, true);
+    buildTemplates.set(name, { scene: model, animations: gltf.animations }); // cache template
+    HUD.setBuildItemAvailable(name, true); // enable button
   }, undefined, function(error){
     console.error(error);
-    // Let the player build with a placeholder if the model fails to load.
-    build_templates.set(itemId, { scene: null, animations: [] });
-    HUD.setBuildItemAvailable(itemId, true);
   });
 }
-// Show an oil puddle at each place where a pump can collect iridium.
+
+for (const [name, item] of Object.entries(buildItems)) {
+  if (item.model) {
+    load_builds(item.model, name); // load asset
+  } else {
+    buildTemplates.set(name, {scene: null, animations: []}); // primitive shape
+    HUD.setBuildItemAvailable(name, true);
+  }
+}
+
+// deposit puddles
 modelLoader.load('./assets/pbr_material_puddle/scene.gltf', function(gltf) {
-  for (const node of game.resourceNodes) {
-    const puddle = gltf.scene.clone(true);
-    puddle.scale.set(2, 1, 2);
-    puddle.position.set(node.x, 0.5, node.z);
+  const bounds = new THREE.Box3().setFromObject(gltf.scene);
+  const puddleY = groundPlane.position.y - bounds.min.y; // align puddle
+
+  // stop flicker
+  gltf.scene.traverse(object => {
+    if (object.isMesh) {
+      object.material.polygonOffset = true; // stop flicker where surfaces overlap
+      object.material.polygonOffsetFactor = -1;
+      object.material.polygonOffsetUnits = -1;
+    }
+  });
+  for (const node of game1.resourceNodes) {
+    const puddle = gltf.scene.clone(true); // duplicate puddle
+    puddle.scale.set(2, 1, 2); // widen puddle
+    puddle.position.set(node.x, puddleY, node.z);
     scene.add(puddle);
     gameObjects.push(puddle);
   }
 });
-const rival = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.8, 0.8), new THREE.MeshPhongMaterial({ color: teamColors[1] }));
-scene.add(rival);
 
 /*---------------------------//
-   PLACEHOLDER BUILDINGS
+   BUILDING MODELS
 //---------------------------*/
 
-// Basic shapes for now. The beacon has a pole and the barracks is a taller box.
-// Placeholder idea:
-// barracks -> box
-// beacon -> short base + pole
-// Proper models could replace these later without changing the game rules.
 function makeBuilding(type, team) {
   const group = new THREE.Group();
-  const material = new THREE.MeshPhongMaterial({ color: teamColors[team] });
+  const material = new THREE.MeshPhongMaterial({ color: teamColors[team] }); // team colour
   let height = 0.5;
-  if (type === 'barracks') height = 1.5;
+  if (type === 'barracks') height = 1.5; // taller barracks
   const body = new THREE.Mesh(new THREE.BoxGeometry(2.5, height, 2.5), material);
-  body.position.y = height / 2; // The origin is in the middle, so lift the base above ground.
+  body.position.y = height / 2; // ground level
   group.add(body);
-  if (type !== 'barracks') {
+  if (type !== 'barracks') { // beacon pole
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2), material);
     pole.position.y = 1.5;
     group.add(pole);
@@ -303,21 +295,21 @@ function makeBuilding(type, team) {
 
 function cancelPlacement() {
   if (activePlaceable) {
-    scene.remove(activePlaceable);
+    scene.remove(activePlaceable); // remove preview
     stopBuildingAnimation(activePlaceable);
   }
   activePlaceable = null;
   activeItemId = null;
   hasPlacementPosition = false;
-  gameInput.previewPlacement_b = false;
+  gameInput.previewPlacement_b = false; // disable placement
 }
 
-// Stop updating the pump animation when its object is removed.
+// stop anim
 function stopBuildingAnimation(object) {
   for (const mixer of placeableMixers) {
-    if (mixer.getRoot() === object) {
+    if (mixer.getRoot() === object) { // match root
       mixer.stopAllAction();
-      placeableMixers.delete(mixer);
+      placeableMixers.delete(mixer); // drop mixer
     }
   }
 }
@@ -326,55 +318,56 @@ function stopBuildingAnimation(object) {
      UPDATING THE SCENE
 //---------------------------*/
 
-// The Maps link game records to their meshes. They avoid making new meshes every frame.
-function updateGameMeshes() {
-  // Remove meshes whose building records no longer exist.
-  for (const [id, mesh] of buildingMeshes) {
-    let stillStanding = false;
-    for (const building of game.buildings) {
-      if (building.id === id) {
-        stillStanding = true;
-        break;
-      }
+const soldierMeshes = new Map();
+const soldierShape = new THREE.BoxGeometry(0.6, 1, 0.6); // shared geometry
+const soldierMaterials = teamColors.map(color => new THREE.MeshPhongMaterial({color})); // shared materials
+
+function updateSoldierMeshes() {
+  for (const [soldier, mesh] of soldierMeshes) {
+    if (game1.soldiers.includes(soldier)) continue; // keep meshes for living soldiers
+    scene.remove(mesh);
+    soldierMeshes.delete(soldier);
+  }
+  for (const soldier of game1.soldiers) {
+    let mesh = soldierMeshes.get(soldier);
+    if (!mesh) { // needs mesh
+      mesh = new THREE.Mesh(soldierShape, soldierMaterials[soldier.team]);
+      scene.add(mesh);
+      soldierMeshes.set(soldier, mesh); // remember mesh
     }
-    if (stillStanding) continue;
+    const dx = soldier.x - mesh.position.x; // horizontal change
+    const dz = soldier.z - mesh.position.z;
+    if (dx || dz) mesh.rotation.y = Math.atan2(dx, dz); // face movement
+    mesh.position.set(soldier.x, 0.5, soldier.z); // sync position
+  }
+}
+
+// mesh lookup
+// - sync building and player meshes with the game state
+function updateGameMeshes() {
+  // destroyed buildings
+  for (const [id, mesh] of buildingMeshes) {
+    if (game1.buildings.some(building => building.id === id)) continue; // keep standing
     scene.remove(mesh);
     const index = gameObjects.indexOf(mesh);
-    if (index >= 0) gameObjects.splice(index, 1);
+    if (index >= 0) gameObjects.splice(index, 1); // drop it from the object list
     stopBuildingAnimation(mesh);
     buildingMeshes.delete(id);
   }
-  // Add meshes for buildings which do not have one yet.
-  for (const building of game.buildings) {
-    if (buildingMeshes.has(building.id)) continue;
+  // missing meshes
+  for (const building of game1.buildings) {
+    if (buildingMeshes.has(building.id) || !buildTemplates.has(building.type)) continue; // skip duplicates
     const mesh = makeBuilding(building.type, building.team);
     mesh.position.set(building.x, 0, building.z);
     scene.add(mesh);
-    buildingMeshes.set(building.id, mesh);
+    buildingMeshes.set(building.id, mesh); // track building
   }
-  // Same idea for soldiers: remove defeated ones, then move the survivors.
-  for (const [soldier, mesh] of soldierMeshes) {
-    if (game.soldiers.includes(soldier)) continue;
-    scene.remove(mesh);
-    // Taking it out of the scene does not free the geometry by itself.
-    // These little soldier meshes are created individually, so they can be disposed here.
-    mesh.geometry.dispose();
-    mesh.material.dispose();
-    soldierMeshes.delete(soldier);
+  for (const player of game1.players) {
+    const mesh = player.character.character;
+    mesh.position.x = player.x;
+    mesh.position.z = player.z;
+    mesh.visible = player.health > 0; // hide dead
   }
-  for (const soldier of game.soldiers) {
-    if (!soldierMeshes.has(soldier)) {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 0.6), new THREE.MeshPhongMaterial({ color: teamColors[soldier.team] }));
-      scene.add(mesh);
-      soldierMeshes.set(soldier, mesh);
-    }
-    soldierMeshes.get(soldier).position.set(soldier.x, 0.5, soldier.z);
-  }
-  const otherPlayer = game.players[1 - game.activeTeam];
-  rival.position.set(otherPlayer.x, 0.9, otherPlayer.z);
-  rival.material.color.setHex(teamColors[otherPlayer.team]);
-  rival.visible = otherPlayer.health > 0;
-  mainCharacter.character.visible = game.player.health > 0;
 }
 
 //---------------------------//
@@ -387,62 +380,61 @@ function updateGameMeshes() {
 const raycaster = new THREE.Raycaster();
 let pointer2D = new THREE.Vector2();
 let previewObject = null;
-const GRID_SIZE = 1; // world units per grid cell
+const GRID_SIZE = 1; // cell size
 
+// - snap the preview to the ground and check if it can be placed
 function updatePlacementPreview(event) {
-  // Only detect cursor if its on the main window.
+  // canvas bounds
   const bounds = canvas.getBoundingClientRect();
 
-  // Make sure the cursor is placed over the ground plane
+  // preview checks
   if (!previewObject || bounds.width === 0 || bounds.height === 0) return;
 
-  // eg (x - bounds) / resolution --> scaled to (-1 -> 1)
+  // normalise cursor
   pointer2D.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-  pointer2D.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+  pointer2D.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1; // invert y
 
-  // Cast from the camera through the cursor.
-  // Three.js picking example: https://threejs.org/manual/pages/picking.html
+  // cursor ray
+  // source https://threejs.org/manual/pages/picking.html
   raycaster.setFromCamera(pointer2D, pCam);
 
-  // Only the ground counts as a placement target.
+  // ground only
   const intersects = raycaster.intersectObject(groundPlane);
-  if (intersects.length === 0) {
+  if (intersects.length === 0) { // hide preview off the ground
     previewObject.visible = false;
     hasPlacementPosition = false;
     return;
   }
 
-  // Vector 3 position
+  // nearest hit
   const hitPoint = intersects[0].point;
 
   //previewObject.position.set(hitPoint.x, hitPoint.y + 0.5, hitPoint.z);
 
-  // Example with GRID_SIZE = 1:
-  // 3.2 -> 3, 3.7 -> 4
-  // Keep the old unsnapped line above for reference.
+  // grid snap
   const snappedX = Math.round(hitPoint.x / GRID_SIZE) * GRID_SIZE;
   const snappedZ = Math.round(hitPoint.z / GRID_SIZE) * GRID_SIZE;
 
   previewObject.position.set(snappedX, hitPoint.y, snappedZ);
   previewObject.visible = true;
-  const error = game.placementError(activeItemId, snappedX, snappedZ);
+  const error = game1.placementError(activeItemId, snappedX, snappedZ); // validate spot
   if (error) {
     hasPlacementPosition = false;
-    game.message = error;
-  } else {
+    game1.message = error;
+  } else { // valid spot
     hasPlacementPosition = true;
-    game.message = 'Press E to place, Esc to cancel.';
+    game1.message = 'Press E to place, Esc to cancel.';
   }
 }
 
 function previewPlacement(object, enabled) {
-  const nextPreviewObject = enabled ? object : null;
-  if (nextPreviewObject === previewObject) return;
+  const nextPreviewObject = enabled ? object : null; // requested preview
+  if (nextPreviewObject === previewObject) return; // reuse the current listener
 
-  canvas.removeEventListener('pointermove', updatePlacementPreview);
+  canvas.removeEventListener('pointermove', updatePlacementPreview); // detach listener
   previewObject = nextPreviewObject;
   if (previewObject) {
-    canvas.addEventListener('pointermove', updatePlacementPreview);
+    canvas.addEventListener('pointermove', updatePlacementPreview); // track cursor
   }
 }
 
@@ -450,59 +442,54 @@ function previewPlacement(object, enabled) {
        MAIN RENDER LOOP
 //---------------------------*/
 
-canvas.addEventListener('pointerleave', function() {
+canvas.addEventListener('pointerleave', function() { // cursor exits
   hasPlacementPosition = false;
   if (previewObject) previewObject.visible = false;
 });
 
-function resizeScreen() {
+function resizeRendererToDisplaySize() {
   const width = window.innerWidth;
   const height = window.innerHeight;
   mainRenderer.setSize(width, height);
   HTMLRenderer.setSize(width, height);
-  pCam.aspect = width / height;
-  pCam.updateProjectionMatrix();
+  pCam.aspect = width / height; // camera aspect
+  pCam.updateProjectionMatrix(); // apply aspect
 }
 
-window.addEventListener('resize', resizeScreen);
+window.addEventListener('resize', resizeRendererToDisplaySize); // resize callback
 
 function render() {
-  const delta = Math.min(animationClock.getDelta(), 0.1);
-  if (game.player.health > 0) {
-    gameInput.update(delta, playerRoot.position, externalCamera);
+  const delta = Math.min(animationClock.getDelta(), 0.1); // avoid jumps after slow frames
+  if (game1.player.health > 0) { // alive only
+    const position = game1.player.character.character.position;
+    gameInput.update(delta, position, externalCamera);
 
-    // Save the new position before the game copies it back onto the model.
-    // Keep x and z on the ground plane.
-    const position = playerRoot.position;
-    game.player.x = Math.max(-49, Math.min(49, position.x));
-    game.player.z = Math.max(-49, Math.min(49, position.z));
+    // map limits
+    game1.player.x = Math.max(-49, Math.min(49, position.x));
+    game1.player.z = Math.max(-49, Math.min(49, position.z));
   } else {
-    gameInput.velocity.set(0, 0, 0);
+    gameInput.velocity.set(0, 0, 0); // stop movement
     cancelPlacement();
   }
 
-  // Update the rules first, then show the new positions, balances and health.
-  // input moves player -> game updates -> meshes and HUD catch up -> render
-  game.update(delta);
-  playerRoot.position.set(game.player.x, 0, game.player.z);
-  updateGameMeshes();
-  HUD.updateGame(game);
-  // Attach after loading so the spawn coordinates don't affect the model bounds.
-  if (mainCharacter.model && mainCharacter.character.parent !== playerRoot) {
-    playerRoot.add(mainCharacter.character);
+  // rules first
+  game1.update(delta);
+  updateGameMeshes(); // sync buildings
+  updateSoldierMeshes(); // sync soldiers
+  HUD.updateGame(game1);
+  for (const player of game1.players) {
+    player.character.update(delta, player === game1.player ? gameInput.velocity : idleVelocity); // only animate movement for active player
   }
-  mainCharacter.character.position.y = 0;
-  mainCharacter.update(delta, gameInput.velocity);
   for (const mixer of placeableMixers) {
-    mixer.update(delta);
+    mixer.update(delta); // advance anim
   }
 
-  previewPlacement(activePlaceable, gameInput.previewPlacement_b);
+  previewPlacement(activePlaceable, gameInput.previewPlacement_b); // sync preview
 
   //orbitControls.animate(mainCharacter.character);
-  externalCamera.animate();
+  externalCamera.animate(); // follow player
 
 
-  mainRenderer.render( scene, pCam );
-  HTMLRenderer.render( scene, pCam );
+  mainRenderer.render( scene, pCam ); // draw world
+  HTMLRenderer.render( scene, pCam ); // draw labels
 }

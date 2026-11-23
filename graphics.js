@@ -11,28 +11,28 @@ export class TextLabel {
         this.font = font;
         this.parent = parent;
 
-        this._createObject();
+        this._createObject(); // build label
 
     }
 
     _createObject(){
-        const text1_dom = document.createElement(this.tagName);
+        const text1_dom = document.createElement(this.tagName); // create tag
         text1_dom.innerText = this.text;
         text1_dom.style.color = this.color;
         text1_dom.style.fontSize = this.size;
         text1_dom.style.fontFamily = this.font;
-        this.parent.appendChild(text1_dom);
+        this.parent.appendChild(text1_dom); // mount label
 
-        this.textObject = new CSS2DObject(text1_dom);
+        this.textObject = new CSS2DObject(text1_dom); // scene label
     }
 }
 
 export class HTML_TextLabel extends TextLabel {
     constructor(text, parent, color = 'white', position = {x:0, y:0}, tagName = 'p', size = 1, font = 'Arial'){
-        super(text, parent, color, position, tagName, size, font);
+        super(text, parent, color, position, tagName, size, font); // parent setup
     }
 
-    _createObject(){
+    _createObject(){ // keep this label in html
         const text1_dom = document.createElement(this.tagName);
         text1_dom.innerText = this.text;
         text1_dom.style.color = this.color;
@@ -54,14 +54,14 @@ export class Line {
     }
 
     _createObject(){
-        this.points = [];
+        this.points = []; // reset points
         this.points.push(new THREE.Vector3(-2, 0, 0));
         this.points.push(new THREE.Vector3(0, 2, 0));
         this.points.push(new THREE.Vector3(2, 0, 0));
 
-        const geometry = new THREE.BufferGeometry().setFromPoints(this.points);
+        const geometry = new THREE.BufferGeometry().setFromPoints(this.points); // connect points
         const material = new THREE.LineBasicMaterial( { color: 'white' } );
 
-        this.line = new THREE.Line(geometry, material);
+        this.line = new THREE.Line(geometry, material); // line object
     }
 }

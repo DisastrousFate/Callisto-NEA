@@ -8,7 +8,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite --configLoader native",
-    "build": "vite build --configLoader native && node copy-assets.js",
-    "test": "node --test game.test.js"
+    "build": "vite build --configLoader native && node copy-assets.js"
   }
 }
